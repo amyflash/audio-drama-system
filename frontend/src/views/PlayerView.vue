@@ -56,6 +56,7 @@
             :src="streamUrl"
             class="w-full"
             @timeupdate="handleTimeUpdate"
+            @progress="calculateBuffered"
             @loadedmetadata="handleLoadedMetadata"
             style="display: none;"
           ></audio>
@@ -75,9 +76,15 @@
                 class="w-full h-2 bg-gray-700 rounded-full cursor-pointer hover:bg-gray-600 transition-colors relative"
                 @click="handleProgressClick"
               >
+                <!-- 缓冲进度条（灰色） -->
+                <div
+                  class="absolute top-0 left-0 h-full bg-gray-500 rounded-full"
+                  :style="{ width: bufferedPercentage + '%' }"
+                ></div>
+
                 <!-- 已播放进度 -->
                 <div
-                  class="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full relative"
+                  class="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full relative"
                   :style="{ width: progressPercentage + '%' }"
                 >
                   <!-- 进度指示点 -->
@@ -87,7 +94,7 @@
                 </div>
               </div>
               <p class="text-gray-500 text-xs mt-2">
-                💡 点击进度条可跳转到指定位置
+                💡 点击进度条可跳转到指定位置 · 灰色为已缓冲部分
               </p>
             </div>
 
@@ -153,6 +160,7 @@ const audioPlayer = ref<HTMLAudioElement | null>(null)
 const currentTime = ref(0)
 const duration = ref(0)
 const isPlaying = ref(false)
+const bufferedPercentage = ref(0)
 
 const streamUrl = computed(() => episodeApi.getStreamUrl(episodeId.value))
 
@@ -160,6 +168,30 @@ const progressPercentage = computed(() => {
   if (!duration.value || !currentTime.value) return 0
   return (currentTime.value / duration.value) * 100
 })
+
+// 计算缓冲百分比
+const calculateBuffered = () => {
+  if (!audioPlayer.value || !duration.value) {
+    bufferedPercentage.value = 0
+    return
+  }
+
+  const buffered = audioPlayer.value.buffered
+  if (buffered.length === 0) {
+    bufferedPercentage.value = 0
+    return
+  }
+
+  // 获取已缓冲的最大时间
+  let bufferedEnd = 0
+  for (let i = 0; i < buffered.length; i++) {
+    if (buffered.end(i) > bufferedEnd) {
+      bufferedEnd = buffered.end(i)
+    }
+  }
+
+  bufferedPercentage.value = (bufferedEnd / duration.value) * 100
+}
 
 const loadEpisode = async () => {
   try {
@@ -176,6 +208,8 @@ const loadEpisode = async () => {
 const handleTimeUpdate = () => {
   if (audioPlayer.value) {
     currentTime.value = audioPlayer.value.currentTime
+    // 计算缓冲进度
+    calculateBuffered()
     // 保存播放进度（每5秒保存一次，减少写入频率）
     const saveTime = Math.floor(currentTime.value)
     const lastSave = parseInt(localStorage.getItem(`playback-time-${episodeId.value}`) || '0')
@@ -189,6 +223,9 @@ const handleTimeUpdate = () => {
 const handleLoadedMetadata = () => {
   if (audioPlayer.value) {
     duration.value = audioPlayer.value.duration
+
+    // 计算缓冲进度
+    calculateBuffered()
 
     // 恢复播放进度
     const savedPos = localStorage.getItem(`playback-pos-${episodeId.value}`)
@@ -265,6 +302,7 @@ onMounted(() => {
   if (audioPlayer.value) {
     audioPlayer.value.addEventListener('play', handlePlay)
     audioPlayer.value.addEventListener('pause', handlePause)
+    audioPlayer.value.addEventListener('progress', calculateBuffered)
   }
 })
 
@@ -275,6 +313,7 @@ onUnmounted(() => {
   if (audioPlayer.value) {
     audioPlayer.value.removeEventListener('play', handlePlay)
     audioPlayer.value.removeEventListener('pause', handlePause)
+    audioPlayer.value.removeEventListener('progress', calculateBuffered)
     audioPlayer.value.pause()
   }
 })

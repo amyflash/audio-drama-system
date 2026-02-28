@@ -4,34 +4,34 @@
       <!-- 顶部装饰 -->
       <div class="bg-gradient-to-r from-blue-500 to-purple-600 p-6 sm:p-8 text-center">
         <div class="text-6xl sm:text-7xl mb-3 sm:mb-4">🎭</div>
-        <h1 class="text-2xl sm:text-3xl font-bold text-white mb-1 sm:mb-2">极简广播剧</h1>
-        <p class="text-blue-100 text-sm sm:text-base">简约高效 · 音频管理</p>
+        <h1 class="text-xl sm:text-3xl font-bold text-white mb-1 sm:mb-2">极简广播剧</h1>
+        <p class="text-blue-100 text-base sm:text-lg">简约高效 · 音频管理</p>
       </div>
 
       <!-- 登录表单 -->
       <div class="p-6 sm:p-8">
         <form @submit.prevent="handleLogin">
           <!-- 用户名输入 -->
-          <div class="mb-4">
-            <label class="block text-gray-700 text-sm font-bold mb-2">用户名</label>
+          <div class="mb-5">
+            <label class="block text-gray-700 text-base sm:text-sm font-bold mb-2">用户名</label>
             <input
               v-model="username"
               type="text"
               placeholder="请输入用户名"
               required
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-4 py-3 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
           <!-- 密码输入 -->
           <div class="mb-6">
-            <label class="block text-gray-700 text-sm font-bold mb-2">密码</label>
+            <label class="block text-gray-700 text-base sm:text-sm font-bold mb-2">密码</label>
             <input
               v-model="password"
               type="password"
               placeholder="请输入密码"
               required
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-4 py-3 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               show-password
             />
           </div>
@@ -40,7 +40,7 @@
           <button
             type="submit"
             :disabled="loading"
-            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 py-sm-4 px-4 rounded-lg transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             {{ loading ? '登录中...' : '登录' }}
           </button>
@@ -51,16 +51,16 @@
           </div>
 
           <!-- 测试账号提示 -->
-          <div class="mt-6 text-center text-sm text-gray-500 bg-gray-50 rounded-lg p-3 sm:p-4">
-            <div class="font-medium mb-1">📝 测试账号</div>
-            <div class="text-xs sm:text-sm">用户名: <span class="font-mono bg-gray-200 px-2 py-1 rounded">admin</span></div>
-            <div class="text-xs sm:text-sm">密码: <span class="font-mono bg-gray-200 px-2 py-1 rounded">123456</span></div>
+          <div class="mt-6 text-center text-sm sm:text-base text-gray-500 bg-gray-50 rounded-lg p-3 sm:p-4">
+            <div class="font-medium mb-2">📝 测试账号</div>
+            <div class="text-sm sm:text-base">用户名: <span class="font-mono bg-gray-200 px-2 py-1 rounded">admin</span></div>
+            <div class="text-sm sm:text-base">密码: <span class="font-mono bg-gray-200 px-2 py-1 rounded">123456</span></div>
           </div>
         </form>
       </div>
 
       <!-- 底部装饰 -->
-      <div class="bg-gray-50 px-6 sm:px-8 py-3 sm:py-4 text-center text-xs text-gray-400">
+      <div class="bg-gray-50 px-6 sm:px-8 py-3 sm:py-4 text-center text-xs sm:text-xs text-gray-400">
         极简广播剧系统 v1.0 · Vue 3 + FastAPI
       </div>
     </div>
