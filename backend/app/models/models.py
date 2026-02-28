@@ -39,7 +39,7 @@ class Episode(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     album_id = Column(Integer, ForeignKey("albums.id", ondelete="CASCADE"), nullable=False, index=True)
     title = Column(String(200), nullable=False)
-    file_path = Column(String(500), nullable=False)
+    file_path = Column(String(500), nullable=True)  # 允许创建时为空，后续上传
     file_size = Column(Integer, default=0)
     duration = Column(Integer, default=0)
     sort_order = Column(Integer, default=0, index=True)
