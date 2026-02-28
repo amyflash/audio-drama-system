@@ -68,6 +68,31 @@ async def get_episodes(
     }
 
 
+@router.get("/{episode_id}", response_model=dict)
+async def get_episode_by_id(
+    episode_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """获取剧集详情（用于播放器）"""
+    episode = db.query(Episode).filter(Episode.id == episode_id).first()
+    if not episode:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="剧集不存在"
+        )
+
+    return {
+        "id": episode.id,
+        "album_id": episode.album_id,
+        "title": episode.title,
+        "duration": episode.duration,
+        "sort_order": episode.sort_order,
+        "created_at": episode.created_at,
+        "stream_url": f"/api/stream/{episode.id}"
+    }
+
+
 @router.get("/admin", response_model=dict)
 async def get_episodes_admin(
     album_id: int = Query(..., description="专辑ID"),
@@ -208,8 +233,11 @@ async def upload_episode_file(
     duration = 0
     try:
         audio_file = MutagenFile(file_path)
-        if audio_file and hasattr(audio_file.info, 'length'):
+        if audio_file and hasattr(audio_file.info, 'length') and audio_file.info.length:
             duration = int(audio_file.info.length)
+        else:
+            # mutagen 未能解析，尝试使用估算
+            duration = int(file_size / 16384)  # 128kbps = 16KB/s
     except Exception:
         # 使用文件大小估算（假设128kbps）
         duration = int(file_size / 16384)  # 128kbps = 16KB/s

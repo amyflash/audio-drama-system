@@ -77,11 +77,14 @@ async def batch_upload(
         duration = 0
         try:
             audio_file = MutagenFile(file_path)
-            if audio_file and hasattr(audio_file.info, 'length'):
+            if audio_file and hasattr(audio_file.info, 'length') and audio_file.info.length:
                 duration = int(audio_file.info.length)
+            else:
+                # mutagen 未能解析，尝试使用估算
+                duration = int(file_size / 16384)  # 128kbps = 16KB/s
         except Exception as e:
-            # 解析失败，使用默认值
-            pass
+            # 解析失败，使用文件大小估算
+            duration = int(file_size / 16384)  # 128kbps = 16KB/s
 
         # 6. 创建剧集记录
         episode = Episode(

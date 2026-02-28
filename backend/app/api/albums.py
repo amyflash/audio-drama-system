@@ -175,7 +175,8 @@ async def get_album_episodes(
             "title": ep.title,
             "duration": ep.duration,
             "sort_order": ep.sort_order,
-            "created_at": ep.created_at
+            "created_at": ep.created_at,
+            "stream_url": f"/api/stream/{ep.id}"
         }
         for ep in episodes
     ]
@@ -272,9 +273,14 @@ async def batch_upload_episodes(
         duration = 0
         try:
             audio_file = MutagenFile(file_path)
-            if audio_file and hasattr(audio_file.info, 'length'):
+            if audio_file and hasattr(audio_file.info, 'length') and audio_file.info.length:
                 duration = int(audio_file.info.length)
                 print(f"Audio duration parsed: {duration} seconds")
+            else:
+                # mutagen 未能解析，尝试使用估算
+                print("Mutagen failed to parse duration, using file size estimation")
+                duration = int(file_size / 16384)  # 128kbps = 16KB/s
+                print(f"Estimated duration from file size: {duration} seconds")
         except Exception as e:
             print(f"Failed to parse audio metadata: {e}")
             # 使用文件大小估算（假设128kbps）

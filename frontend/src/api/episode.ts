@@ -68,5 +68,5 @@ export const episodeApi = {
     api.delete(`/api/admin/episodes/${id}`),
 
   getStreamUrl: (id: number) =>
-    `${api.defaults.baseURL}/api/admin/episodes/${id}/stream`
+    `${api.defaults.baseURL}/api/stream/${id}`
 }
