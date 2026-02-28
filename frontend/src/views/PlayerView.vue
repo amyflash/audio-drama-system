@@ -1,20 +1,20 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 pb-8">
+  <div class="min-h-screen bg-gradient-to-br from-gray-900 via-gray-950 to-black pb-8">
     <!-- 移动端顶部导航 -->
-    <div class="bg-white shadow-sm border-b px-4 py-3 sticky top-0 z-50 flex items-center gap-3">
+    <div class="bg-gray-900/80 backdrop-blur-sm shadow-lg border-b border-gray-800 px-4 py-3 sticky top-0 z-50 flex items-center gap-3">
       <button
         @click="$router.back()"
-        class="text-blue-600 hover:text-blue-700 px-2 py-1 text-sm font-medium transition-colors"
+        class="text-blue-400 hover:text-blue-300 px-2 py-1 text-sm font-medium transition-colors"
       >
         ← 返回
       </button>
-      <span class="font-semibold text-gray-700 text-sm truncate">播放中</span>
+      <span class="font-semibold text-gray-200 text-sm truncate">播放中</span>
     </div>
 
     <div class="max-w-4xl mx-auto p-4 sm:p-6">
       <!-- 加载状态 -->
       <div v-if="loading" class="flex justify-center py-12">
-        <div class="animate-spin text-4xl text-blue-500">
+        <div class="animate-spin text-4xl text-blue-400">
           <svg class="w-10 h-10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" stroke-opacity="0.25"></circle>
             <path d="M4 12a8 8 0 018-8" stroke="currentColor" stroke-width="4" stroke-linecap="round"></path>
@@ -23,21 +23,21 @@
       </div>
 
       <!-- 播放器内容 -->
-      <div v-else-if="episode" class="bg-white rounded-xl shadow-sm p-6 sm:p-8">
+      <div v-else-if="episode" class="bg-gray-900/50 backdrop-blur-sm rounded-2xl shadow-2xl p-6 sm:p-8 border border-gray-800">
         <!-- 标题区域 -->
         <div class="text-center mb-6 sm:mb-8">
-          <h1 class="text-xl sm:text-3xl font-bold text-gray-800 mb-2">{{ episode.title }}</h1>
-          <p class="text-gray-600 text-sm sm:text-base">第 {{ episode.sort_order + 1 }} 集</p>
+          <h1 class="text-xl sm:text-3xl font-bold text-white mb-2">{{ episode.title }}</h1>
+          <p class="text-gray-400 text-sm sm:text-base">第 {{ episode.sort_order + 1 }} 集</p>
         </div>
 
         <!-- 空剧集提示 -->
-        <div v-if="!episode.stream_url || episode.duration === 0" class="bg-yellow-50 border border-yellow-200 rounded-xl p-6 sm:p-8 text-center mb-6">
+        <div v-if="!episode.stream_url || episode.duration === 0" class="bg-gray-800/50 border border-gray-700 rounded-xl p-6 sm:p-8 text-center mb-6">
           <span class="text-4xl sm:text-5xl mb-4 block">📭</span>
-          <h3 class="text-lg sm:text-xl font-semibold text-yellow-800 mb-2">暂无音频文件</h3>
-          <p class="text-yellow-700 text-sm sm:text-base mb-4">该剧集还未上传音频文件</p>
+          <h3 class="text-lg sm:text-xl font-semibold text-yellow-400 mb-2">暂无音频文件</h3>
+          <p class="text-gray-400 text-sm sm:text-base mb-4">该剧集还未上传音频文件</p>
           <button
             @click="$router.push(`/albums/${episode.album_id}`)"
-            class="inline-block bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors"
+            class="inline-block bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-6 py-2 rounded-lg text-sm font-medium transition-all shadow-lg"
           >
             上传音频文件
           </button>
@@ -61,7 +61,7 @@
           ></audio>
 
           <!-- 自定义播放控制 -->
-          <div class="bg-gray-900 rounded-xl p-4 sm:p-6">
+          <div class="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-4 sm:p-6 border border-gray-700">
             <!-- 进度条区域 -->
             <div class="mb-4">
               <!-- 时间显示 -->
@@ -96,7 +96,7 @@
               <!-- 后退 10 秒 -->
               <button
                 @click="seekBy(-10)"
-                class="w-12 h-12 rounded-full bg-gray-700 hover:bg-gray-600 text-white flex items-center justify-center transition-colors"
+                class="w-12 h-12 rounded-full bg-gray-700 hover:bg-gray-600 text-white flex items-center justify-center transition-colors shadow-lg hover:shadow-xl"
               >
                 <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.333 4zM4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.334 4z" />
@@ -106,7 +106,7 @@
               <!-- 播放/暂停按钮 -->
               <button
                 @click="togglePlay"
-                class="w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white flex items-center justify-center transition-all shadow-lg"
+                class="w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white flex items-center justify-center transition-all shadow-xl hover:shadow-2xl transform hover:scale-105"
               >
                 <svg v-if="!isPlaying" class="w-8 h-8 ml-1" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z" />
@@ -119,7 +119,7 @@
               <!-- 前进 10 秒 -->
               <button
                 @click="seekBy(10)"
-                class="w-12 h-12 rounded-full bg-gray-700 hover:bg-gray-600 text-white flex items-center justify-center transition-colors"
+                class="w-12 h-12 rounded-full bg-gray-700 hover:bg-gray-600 text-white flex items-center justify-center transition-colors shadow-lg hover:shadow-xl"
               >
                 <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.933 12.8a1 1 0 000-1.6L6.6 7.2A1 1 0 005 8v8a1 1 0 001.6.8l5.333-4zM19.933 12.8a1 1 0 000-1.6l-5.333-4A1 1 0 0013 8v8a1 1 0 001.6.8l5.333-4z" />
@@ -129,7 +129,7 @@
           </div>
 
           <!-- 音频信息（仅在有音频文件时显示） -->
-          <div v-if="episode.duration > 0" class="mt-4 sm:mt-6 space-y-1 sm:space-y-2 text-center text-gray-500 text-sm sm:text-base">
+          <div v-if="episode.duration > 0" class="mt-4 sm:mt-6 space-y-1 sm:space-y-2 text-center text-gray-400 text-sm sm:text-base">
             <p>⏱️ 总时长: {{ formatDuration(episode.duration) }}</p>
             <p class="text-xs sm:text-sm">支持格式: MP3 / OGG / FLAC</p>
           </div>
