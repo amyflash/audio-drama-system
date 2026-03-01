@@ -13,7 +13,7 @@ export interface Album {
 
 export interface AlbumCreate {
   title: string
-  cover_image: string
+  cover_image?: string
   description?: string
   sort_order?: number
 }
@@ -37,4 +37,8 @@ export const update = (id: number, data: Partial<AlbumCreate>) =>
   api.put<Album>(`/api/admin/albums/${id}`, data)
 
 export const remove = (id: number) =>
+  api.delete(`/api/admin/albums/${id}`)
+
+// 别名方法，保持与其他 API 一致
+export const delete = (id: number) =>
   api.delete(`/api/admin/albums/${id}`)

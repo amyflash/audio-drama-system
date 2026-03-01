@@ -21,12 +21,20 @@
     <div style="background-color: white; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); border-bottom: 1px solid #e5e7eb; padding: 8px 16px; position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between;">
       <button
         @click="navigateTo('/')"
-        style="color: #2563eb; padding: 8px; font-size: 14px; font-weight: 500; border: none; background: none; cursor: pointer;"
+        style="color: #10b981; padding: 8px; font-size: 14px; font-weight: 500; border: none; background: none; cursor: pointer;"
       >
         ← 返回
       </button>
       <div style="display: flex; align-items: center; gap: 8px;">
-        <div style="width: 32px; height: 32px; background: linear-gradient(to bottom right, #3b82f6, #a855f7); border-radius: 9999px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px;">
+        <button
+          @click="navigateTo('/')"
+          style="color: #3b82f6; padding: 6px 12px; font-size: 13px; font-weight: 500; border: 1px solid #3b82f6; background: white; border-radius: 6px; cursor: pointer; transition: background-color 0.2s;"
+          onmouseover="this.style.backgroundColor='#eff6ff'"
+          onmouseout="this.style.backgroundColor='white'"
+        >
+          登录设置
+        </button>
+        <div style="width: 32px; height: 32px; background: linear-gradient(to bottom right, #10b981, #059669); border-radius: 9999px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px;">
           {{ user?.username?.charAt(0).toUpperCase() || 'U' }}
         </div>
         <span style="font-size: 14px; color: #4b5563; max-width: 80px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
@@ -36,16 +44,51 @@
     </div>
 
     <div style="max-width: 80rem; margin: 0 auto; padding: 16px 24px;">
-      <!-- 加载状态 -->
-      <div v-if="loading" style="display: flex; justify-content: center; padding: 48px;">
-        <div style="color: #3b82f6; font-size: 14px;">加载中...</div>
+      <!-- 加载状态 - 骨架屏 -->
+      <div v-if="loading" style="background-color: white; border-radius: 12px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); padding: 24px; margin-bottom: 24px;">
+        <!-- 专辑信息骨架 -->
+        <div style="display: flex; gap: 16px; margin-bottom: 24px;">
+          <div
+            style="width: 160px 192px; height: 160px 192px; flex-shrink: 0; background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 12px; display: flex; align-items: center; justify-content: center;"
+          >
+            <span style="font-size: 48px; opacity: 0.3;">📚</span>
+          </div>
+          <div style="flex: 1;">
+            <div
+              style="height: 24px; width: 60%; background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 4px; margin-bottom: 12px;"
+            ></div>
+            <div
+              style="height: 16px; width: 40%; background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 4px; margin-bottom: 8px;"
+            ></div>
+            <div
+              style="height: 16px; width: 30%; background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 4px;"
+            ></div>
+          </div>
+        </div>
+        <!-- 单集列表骨架 x3 -->
+        <div v-for="i in 3" :key="'episode-skeleton-' + i" style="background-color: white; border-radius: 12px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); padding: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 16px;">
+          <div
+            style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; flex-shrink: 0;"
+          ></div>
+          <div style="flex: 1;">
+            <div
+              style="height: 18px; width: 70%; background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 4px; margin-bottom: 8px;"
+            ></div>
+            <div
+              style="height: 14px; width: 30%; background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 4px;"
+            ></div>
+          </div>
+          <div
+            style="width: 40px; height: 36px; background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px;"
+          ></div>
+        </div>
       </div>
 
       <!-- 专辑信息 - 移动端优化 -->
       <div v-else-if="album" style="background-color: white; border-radius: 12px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); padding: 16px 24px; margin-bottom: 24px;">
         <div style="display: flex; flex-direction: column; gap: 16px 24px; @media (min-width: 640px) { flex-direction: row; }">
           <!-- 专辑封面 -->
-          <div style="width: 100%; height: 128px; background: linear-gradient(to bottom right, #818cf8, #a855f7); border-radius: 12px; display: flex; align-items: center; justify-content: center; @media (min-width: 640px) { width: 128px; height: 128px; }">
+          <div style="width: 100%; height: 128px; background: linear-gradient(to bottom right, #34d399, #059669); border-radius: 12px; display: flex; align-items: center; justify-content: center; @media (min-width: 640px) { width: 128px; height: 128px; }">
             <div
               v-if="album.cover_image"
               :style="{
@@ -92,12 +135,21 @@
         <h2 style="font-size: 18px 20px; font-weight: bold; color: #1f2937;">
           🎧 单集列表 ({{ episodes.length }})
         </h2>
-        <div style="display: flex; gap: 8px;">
+        <div v-if="isAdmin()" style="display: flex; gap: 8px;">
+          <button
+            v-if="episodes.length > 0"
+            @click="showSearchBox = !showSearchBox"
+            style="background-color: #10b981; color: white; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; border: none; cursor: pointer; transition: background-color 0.2s;"
+            onmouseover="this.style.backgroundColor='#059669'"
+            onmouseout="this.style.backgroundColor='#10b981'"
+          >
+            🔍<span style="display: none; @media (min-width: 640px) { display: inline; margin-left: 4px; }">搜索</span>
+          </button>
           <button
             @click="showCreateEpisodeModal = true"
-            style="background-color: #2563eb; color: white; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; border: none; cursor: pointer; transition: background-color 0.2s;"
-            onmouseover="this.style.backgroundColor='#1d4ed8'"
-            onmouseout="this.style.backgroundColor='#2563eb'"
+            style="background-color: #10b981; color: white; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; border: none; cursor: pointer; transition: background-color 0.2s;"
+            onmouseover="this.style.backgroundColor='#059669'"
+            onmouseout="this.style.backgroundColor='#10b981'"
           >
             <span style="margin-right: 4px;">＋</span>
             <span style="display: none; @media (min-width: 640px) { display: inline; }">新建单集</span>
@@ -121,6 +173,63 @@
         </div>
       </div>
 
+      <!-- 上传进度显示 -->
+      <div v-if="showProgress" style="background-color: white; border-radius: 12px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); padding: 16px; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-size: 14px; font-weight: 500; color: #1f2937;">
+            📤 {{ uploadStatus || '上传中...' }}
+          </span>
+          <span style="font-size: 14px; font-weight: bold; color: #10b981;">
+            {{ uploadProgress }}%
+          </span>
+        </div>
+        <div style="width: 100%; height: 8px; background-color: #f3f4f6; border-radius: 4px; overflow: hidden;">
+          <div
+            :style="{
+              width: `${uploadProgress}%`,
+              height: '100%',
+              backgroundColor: '#10b981',
+              transition: 'width 0.3s ease'
+            }"
+          ></div>
+        </div>
+      </div>
+
+      <!-- 搜索框 -->
+      <div v-if="showSearchBox" style="background-color: white; border-radius: 12px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); padding: 16px; margin-bottom: 16px;">
+        <div style="display: flex; gap: 12px;">
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="搜索单集标题..."
+            style="flex: 1; padding: 10px 16px; border: 1px solid #d1d5db; border-radius: 8px; outline: none; font-size: 14px;"
+            onfocus="this.style.borderColor='#10b981'"
+            onblur="this.style.borderColor='#d1d5db'"
+            @keypress.enter="handleSearch"
+          />
+          <button
+            @click="handleSearch"
+            style="padding: 10px 20px; background-color: #10b981; color: white; font-weight: 500; border-radius: 8px; border: none; cursor: pointer; transition: background-color 0.2s; font-size: 14px;"
+            onmouseover="this.style.backgroundColor='#059669'"
+            onmouseout="this.style.backgroundColor='#10b981'"
+          >
+            搜索
+          </button>
+          <button
+            v-if="searchQuery"
+            @click="clearSearch"
+            style="padding: 10px 20px; background-color: #9ca3af; color: white; font-weight: 500; border-radius: 8px; border: none; cursor: pointer; transition: background-color 0.2s; font-size: 14px;"
+            onmouseover="this.style.backgroundColor='#6b7280'"
+            onmouseout="this.style.backgroundColor='#9ca3af'"
+          >
+            清除
+          </button>
+        </div>
+        <p v-if="searching" style="color: #6b7280; font-size: 12px; margin-top: 8px;">正在搜索...</p>
+        <p v-else-if="searched && filteredEpisodes.length === 0 && episodes.length > 0" style="color: #ef4444; font-size: 12px; margin-top: 8px;">未找到匹配的单集</p>
+        <p v-else-if="searched && filteredEpisodes.length > 0" style="color: #10b981; font-size: 12px; margin-top: 8px;">找到 {{ filteredEpisodes.length }} 个匹配的单集</p>
+      </div>
+
       <!-- 空状态 -->
       <div v-if="!loading && episodes.length === 0" style="background-color: white; border-radius: 12px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); padding: 32px 48px; text-align: center;">
         <div style="font-size: 48px 64px; margin-bottom: 16px;">🎧</div>
@@ -128,54 +237,71 @@
         <p style="color: #6b7280; font-size: 14px 16px;">点击上方按钮添加你的第一个音频</p>
       </div>
 
-      <!-- 单集列表 - 移动端优化 -->
+      <!-- 单集列表 - 移动端优化（左滑显示按钮） -->
       <div v-else style="display: flex; flex-direction: column; gap: 12px;">
         <div
-          v-for="episode in episodes"
+          v-for="episode in filteredEpisodes"
           :key="episode.id"
-          @click="navigateTo(`/player/${episode.id}`)"
-          style="background-color: white; border-radius: 12px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); padding: 16px; cursor: pointer; transition: box-shadow 0.2s;"
-          onmouseover="this.style.boxShadow='0 4px 6px -1px rgba(0, 0, 0, 0.1)'"
-          onmouseout="this.style.boxShadow='0 1px 3px 0 rgba(0, 0, 0, 0.1)'"
+          style="display: flex; position: relative; overflow: hidden; border-radius: 12px;"
         >
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <!-- 音频图标 -->
-            <div
-              @click.stop="navigateTo(`/player/${episode.id}`)"
-              style="width: 40px 48px; height: 40px 48px; background-color: #eff6ff; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px 20px; flex-shrink: 0; cursor: pointer;"
-            >
-              🎵
-            </div>
+          <!-- 单集内容区域 -->
+          <div
+            @click="navigateTo(`/player/${episode.id}`)"
+            style="flex: 1; background-color: white; border-radius: 12px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); padding: 16px; cursor: pointer; transition: box-shadow 0.2s; position: relative; z-index: 10;"
+            onmouseover="this.style.boxShadow='0 4px 6px -1px rgba(0, 0, 0, 0.1)'"
+            onmouseout="this.style.boxShadow='0 1px 3px 0 rgba(0, 0, 0, 0.1)'"
+          >
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <!-- 音频图标 -->
+              <div
+                @click.stop="navigateTo(`/player/${episode.id}`)"
+                style="width: 40px 48px; height: 40px 48px; background-color: #eff6ff; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px 20px; flex-shrink: 0; cursor: pointer;"
+              >
+                🎵
+              </div>
 
-            <!-- 单集信息 -->
-            <div style="flex: 1; min-width: 0;">
-              <h3 style="font-weight: bold; font-size: 16px 18px; color: #1f2937; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                {{ episode.title }}
-              </h3>
-              <div style="display: flex; flex-wrap: gap: 8px 16px; font-size: 12px 14px; color: #6b7280;">
-                <span>⏱️ {{ formatDuration(episode.duration) }}</span>
-                <span>📅 {{ formatShortDate(episode.created_at) }}</span>
+              <!-- 单集信息 -->
+              <div style="flex: 1; min-width: 0;">
+                <h3 style="font-weight: bold; font-size: 16px 18px; color: #1f2937; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                  {{ episode.title }}
+                </h3>
+                <div style="display: flex; flex-wrap: gap: 8px 16px; font-size: 12px 14px; color: #6b7280;">
+                  <span>⏱️ {{ formatDuration(episode.duration) }}</span>
+                  <span>📅 {{ formatShortDate(episode.created_at) }}</span>
+                </div>
+              </div>
+
+              <!-- 播放按钮 -->
+              <div style="display: flex; align-items: center; flex-shrink: 0;">
+                <button
+                  @click.stop="navigateTo(`/player/${episode.id}`)"
+                  style="background-color: #10b981; color: white; width: 40px 48px; height: 40px 48px; border-radius: 9999px; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; font-size: 18px 20px; transition: background-color 0.2s;"
+                  onmouseover="this.style.backgroundColor='#059669'"
+                  onmouseout="this.style.backgroundColor='#10b981'"
+                >
+                  ▶️
+                </button>
               </div>
             </div>
+          </div>
 
-            <!-- 播放和删除按钮 -->
-            <div style="display: flex; align-items: center; gap: 4px 8px; flex-shrink: 0;">
-              <button
-                @click.stop="navigateTo(`/player/${episode.id}`)"
-                style="background-color: #2563eb; color: white; width: 32px 40px; height: 32px 40px; border-radius: 9999px; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; font-size: 18px 20px; transition: background-color 0.2s;"
-                onmouseover="this.style.backgroundColor='#1d4ed8'"
-                onmouseout="this.style.backgroundColor='#2563eb'"
-              >
-                ▶️
-              </button>
-              <button
-                @click.stop="handleDeleteEpisode(episode.id)"
-                style="background-color: #fee2e2; color: #dc2626; width: 32px 40px; height: 32px 40px; border-radius: 9999px; display: flex; align-items: center; justify-content: center; transition: background-color 0.2s; border: none; cursor: pointer;"
-                onmouseover="this.style.backgroundColor='#fecaca'"
-                onmouseout="this.style.backgroundColor='#fee2e2'"
-              >
-                🗑️
-              </button>
+          <!-- 按钮区域（右侧）-->
+          <div v-if="isAdmin" style="flex-shrink: 0; width: 80px; display: flex; z-index: 20; position: absolute; right: 0; top: 0; bottom: 0;">
+            <div
+              @click.stop="handleEditEpisode(episode)"
+              style="flex: 1; background-color: #10b981; color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; cursor: pointer; transition: background-color 0.2s;"
+              onmouseover="this.style.backgroundColor='#059669'"
+              onmouseout="this.style.backgroundColor='#10b981'"
+            >
+              ✏️
+            </div>
+            <div
+              @click.stop="handleDeleteEpisode(episode.id)"
+              style="flex: 1; background-color: #dc2626; color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; cursor: pointer; transition: background-color 0.2s;"
+              onmouseover="this.style.backgroundColor='#b91c1c'"
+              onmouseout="this.style.backgroundColor='#dc2626'"
+            >
+              🗑️
             </div>
           </div>
         </div>
@@ -197,7 +323,7 @@
                 placeholder="请输入专辑标题"
                 required
                 style="width: 100%; padding: 8px 16px 12px; border: 1px solid #d1d5db; border-radius: 8px; outline: none; transition: border-color 0.2s;"
-                onfocus="this.style.borderColor='#3b82f6'"
+                onfocus="this.style.borderColor='#10b981'"
                 onblur="this.style.borderColor='#d1d5db'"
               />
             </div>
@@ -209,7 +335,7 @@
                 placeholder="请输入专辑描述（可选）"
                 rows="3"
                 style="width: 100%; padding: 8px 16px 12px; border: 1px solid #d1d5db; border-radius: 8px; outline: none; transition: border-color 0.2s; resize: none;"
-                onfocus="this.style.borderColor='#3b82f6'"
+                onfocus="this.style.borderColor='#10b981'"
                 onblur="this.style.borderColor='#d1d5db'"
               ></textarea>
             </div>
@@ -226,9 +352,9 @@
               </button>
               <button
                 type="submit"
-                style="padding: 8px 16px; background-color: #2563eb; color: white; border-radius: 8px; font-weight: 500; cursor: pointer; transition: background-color 0.2s; border: none;"
-                onmouseover="this.style.backgroundColor='#1d4ed8'"
-                onmouseout="this.style.backgroundColor='#2563eb'"
+                style="padding: 8px 16px; background-color: #10b981; color: white; border-radius: 8px; font-weight: 500; cursor: pointer; transition: background-color 0.2s; border: none;"
+                onmouseover="this.style.backgroundColor='#059669'"
+                onmouseout="this.style.backgroundColor='#10b981'"
               >
                 保存
               </button>
@@ -253,7 +379,7 @@
                 placeholder="请输入单集标题"
                 required
                 style="width: 100%; padding: 8px 16px 12px; border: 1px solid #d1d5db; border-radius: 8px; outline: none; transition: border-color 0.2s;"
-                onfocus="this.style.borderColor='#3b82f6'"
+                onfocus="this.style.borderColor='#10b981'"
                 onblur="this.style.borderColor='#d1d5db'"
               />
             </div>
@@ -282,11 +408,56 @@
               <button
                 type="submit"
                 :disabled="uploading"
-                style="padding: 8px 16px; background-color: #2563eb; color: white; border-radius: 8px; font-weight: 500; cursor: pointer; transition: background-color 0.2s; border: none;"
-                onmouseover="!this.disabled && (this.style.backgroundColor='#1d4ed8')"
-                onmouseout="!this.disabled && (this.style.backgroundColor='#2563eb')"
+                style="padding: 8px 16px; background-color: #10b981; color: white; border-radius: 8px; font-weight: 500; cursor: pointer; transition: background-color 0.2s; border: none;"
+                onmouseover="!this.disabled && (this.style.backgroundColor='#059669')"
+                onmouseout="!this.disabled && (this.style.backgroundColor='#10b981')"
               >
                 {{ uploading ? '上传中...' : '创建' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- 编辑单集弹窗 -->
+    <div v-if="showEditEpisodeModal" style="position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 16px;">
+      <div style="background-color: white; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); width: 100%; max-width: 448px;">
+        <div style="padding: 16px 24px;">
+          <h2 style="font-size: 20px 24px; font-weight: bold; color: #1f2937; margin-bottom: 16px 24px;">编辑单集</h2>
+
+          <form @submit.prevent="handleUpdateEpisode">
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; color: #374151; font-size: 14px; font-weight: bold; margin-bottom: 8px;">标题</label>
+              <input
+                v-model="editingEpisode.title"
+                type="text"
+                placeholder="请输入单集标题"
+                required
+                style="width: 100%; padding: 8px 16px 12px; border: 1px solid #d1d5db; border-radius: 8px; outline: none; transition: border-color 0.2s;"
+                onfocus="this.style.borderColor='#10b981'"
+                onblur="this.style.borderColor='#d1d5db'"
+              />
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px;">
+              <button
+                type="button"
+                @click="showEditEpisodeModal = false"
+                style="padding: 8px 16px; border: 1px solid #d1d5db; border-radius: 8px; background-color: white; color: #374151; font-weight: 500; cursor: pointer; transition: background-color 0.2s;"
+                onmouseover="this.style.backgroundColor='#f9fafb'"
+                onmouseout="this.style.backgroundColor='white'"
+              >
+                取消
+              </button>
+              <button
+                type="submit"
+                :disabled="updating"
+                style="padding: 8px 16px; background-color: #10b981; color: white; border-radius: 8px; font-weight: 500; cursor: pointer; transition: background-color 0.2s; border: none;"
+                onmouseover="!this.disabled && (this.style.backgroundColor='#059669')"
+                onmouseout="!this.disabled && (this.style.backgroundColor='#10b981')"
+              >
+                {{ updating ? '更新中...' : '更新' }}
               </button>
             </div>
           </form>
@@ -304,7 +475,7 @@ const { $albumApi, $episodeApi } = useNuxtApp()
 
 // 从 localStorage 获取用户信息
 const user = computed(() => {
-  if (process.client) {
+  if (import.meta.client) {
     const userData = localStorage.getItem('user')
     return userData ? JSON.parse(userData) : null
   }
@@ -317,12 +488,19 @@ const getUserDisplayName = () => {
     : user.value?.username || '未知用户'
 }
 
+// 检查用户是否是管理员
+const isAdmin = computed(() => {
+  return user.value?.role === 'admin'
+})
+
 const albumId = ref<number>(parseInt(route.params.id as string))
 
 const album = ref<any>(null)
 const episodes = ref<any[]>([])
+const filteredEpisodes = ref<any[]>([])
 const loading = ref(true)
 const uploading = ref(false)
+const updating = ref(false)
 
 // 自定义 Toast 状态
 const toast = ref({
@@ -334,10 +512,26 @@ const toast = ref({
 const showEditModal = ref(false)
 const editForm = ref({ title: '', description: '' })
 
+const showEditEpisodeModal = ref(false)
+const showSearchBox = ref(false)
+const searchQuery = ref('')
+const searching = ref(false)
+const searched = ref(false)
+const editingEpisode = ref({
+  id: 0,
+  title: '',
+  sort_order: 0
+})
+
 const showCreateEpisodeModal = ref(false)
 const newEpisode = ref({ title: '' })
 const audioFileInput = ref<HTMLInputElement | null>(null)
 const batchUploadInput = ref<HTMLInputElement | null>(null)
+
+// 上传进度相关
+const uploadProgress = ref(0)
+const showProgress = ref(false)
+const uploadStatus = ref('')
 
 // 显示 Toast 提示
 const showToast = (message: string, type: 'success' | 'error' | 'warning' = 'info') => {
@@ -361,6 +555,7 @@ const loadEpisodes = async () => {
   try {
     const response = await $episodeApi.getByAlbum(albumId.value)
     episodes.value = response.data.items
+    filteredEpisodes.value = response.data.items
   } catch (error) {
     showToast('加载单集失败', 'error')
   } finally {
@@ -395,13 +590,21 @@ const handleCreateEpisode = async () => {
   }
 
   uploading.value = true
+  showProgress.value = true
+  uploadProgress.value = 0
+  uploadStatus.value = `正在上传: ${file.name}`
+
   try {
     const createResponse = await $episodeApi.create(albumId.value, {
       title: newEpisode.value.title,
       sort_order: episodes.value.length
     })
     const newId = createResponse.data.id
-    await $episodeApi.upload(newId, file)
+
+    await $episodeApi.upload(newId, file, (progress) => {
+      uploadProgress.value = progress
+    })
+
     showToast('单集创建成功', 'success')
     showCreateEpisodeModal.value = false
     newEpisode.value = { title: '' }
@@ -410,6 +613,8 @@ const handleCreateEpisode = async () => {
     showToast('创建单集失败', 'error')
   } finally {
     uploading.value = false
+    showProgress.value = false
+    uploadProgress.value = 0
   }
 }
 
@@ -422,14 +627,23 @@ const handleBatchUpload = async () => {
   if (!files || files.length === 0) return
 
   uploading.value = true
+  showProgress.value = true
+  uploadProgress.value = 0
+  uploadStatus.value = `正在上传 ${files.length} 个文件...`
+
   try {
-    await $episodeApi.batchUpload(albumId.value, Array.from(files))
+    await $episodeApi.batchUpload(albumId.value, Array.from(files), (progress) => {
+      uploadProgress.value = progress
+    })
+
     showToast(`成功上传 ${files.length} 个文件`, 'success')
     await loadEpisodes()
   } catch (error) {
     showToast('批量上传失败', 'error')
   } finally {
     uploading.value = false
+    showProgress.value = false
+    uploadProgress.value = 0
     if (batchUploadInput.value) {
       batchUploadInput.value.value = ''
     }
@@ -437,15 +651,96 @@ const handleBatchUpload = async () => {
 }
 
 const handleDeleteEpisode = async (episodeId: number) => {
+  // 权限检查
+  if (!isAdmin.value) {
+    showToast('没有删除权限，请使用管理员账号登录', 'error')
+    return
+  }
+
   if (confirm('确定要删除这个音频吗？')) {
     try {
-      await $episodeApi.delete(episodeId)
+      console.log('删除剧集，ID:', episodeId)
+      const response = await $episodeApi.delete(episodeId)
+      console.log('删除响应:', response)
       showToast('删除成功', 'success')
       await loadEpisodes()
-    } catch (error) {
-      showToast('删除失败', 'error')
+      // 重新过滤搜索结果
+      if (searchQuery.value.trim()) {
+        handleSearch()
+      }
+    } catch (error: any) {
+      console.error('删除失败:', error)
+      const errorMessage = error.response?.data?.detail || error.message || '删除失败'
+      showToast(errorMessage, 'error')
     }
   }
+}
+
+const handleEditEpisode = (episode: any) => {
+  // 权限检查
+  if (!isAdmin.value) {
+    showToast('没有编辑权限，请使用管理员账号登录', 'error')
+    return
+  }
+  editingEpisode.value = { ...episode }
+  showEditEpisodeModal.value = true
+}
+
+const handleUpdateEpisode = async () => {
+  if (!editingEpisode.value.title.trim()) {
+    showToast('请输入单集标题', 'warning')
+    return
+  }
+
+  updating.value = true
+  try {
+    await $episodeApi.update(editingEpisode.value.id, {
+      title: editingEpisode.value.title,
+      sort_order: editingEpisode.value.sort_order
+    })
+    showToast('单集更新成功', 'success')
+    showEditEpisodeModal.value = false
+    editingEpisode.value = { id: 0, title: '', sort_order: 0 }
+    await loadEpisodes()
+    // 重新过滤搜索结果
+    if (searchQuery.value.trim()) {
+      handleSearch()
+    }
+  } catch (error) {
+    showToast('更新单集失败', 'error')
+  } finally {
+    updating.value = false
+  }
+}
+
+const handleSearch = async () => {
+  if (!searchQuery.value.trim()) {
+    showToast('请输入搜索关键词', 'warning')
+    return
+  }
+
+  searching.value = true
+  searched.value = true
+
+  try {
+    // 前端过滤
+    const query = searchQuery.value.toLowerCase()
+    filteredEpisodes.value = episodes.value.filter(episode =>
+      episode.title?.toLowerCase().includes(query)
+    )
+    showToast(`找到 ${filteredEpisodes.value.length} 个匹配的单集`, 'success')
+  } catch (error) {
+    showToast('搜索失败', 'error')
+  } finally {
+    searching.value = false
+  }
+}
+
+const clearSearch = () => {
+  searchQuery.value = ''
+  searched.value = false
+  filteredEpisodes.value = [...episodes.value]
+  showSearchBox.value = false
 }
 
 const formatDuration = (seconds: number) => {
@@ -488,6 +783,15 @@ onMounted(() => {
   to {
     opacity: 1;
     transform: translate(-50%, 0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
   }
 }
 </style>

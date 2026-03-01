@@ -18,6 +18,10 @@ from app.core.config import settings
 router = APIRouter(prefix="/albums", tags=["专辑管理"])
 
 
+# 默认封面图（Base64编码的SVG）
+DEFAULT_COVER = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yIiMzYfGQ3OTUiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiM3YzNhZWQiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0id2hpdGUiIGZvbnQtc2l6ZT0iNDBweCIgZm9udC1mYW1pbHk9IkFyaWFsIj7lha3lia88L3RleHQ+PC9zdmc+'
+
+
 def _album_to_response(album: Album) -> AlbumResponse:
     """将Album模型转换为AlbumResponse"""
     return AlbumResponse(
@@ -68,7 +72,7 @@ async def create_album(
     """创建专辑"""
     album = Album(
         title=album_data.title,
-        cover_image=album_data.cover_image,
+        cover_image=album_data.cover_image or DEFAULT_COVER,
         description=album_data.description,
         sort_order=album_data.sort_order
     )

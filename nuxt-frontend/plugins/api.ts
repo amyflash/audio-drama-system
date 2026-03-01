@@ -46,7 +46,15 @@ export default defineNuxtPlugin((nuxtApp) => {
     heartbeat: () =>
       api.post('/api/auth/heartbeat'),
     getCurrentUser: () =>
-      api.get('/api/auth/me')
+      api.get('/api/auth/me'),
+    getUsers: () =>
+      api.get('/api/admin/users'),
+    createUser: (data: any) =>
+      api.post('/api/admin/users', data),
+    updateUser: (id: number, data: any) =>
+      api.put(`/api/admin/users/${id}`, data),
+    deleteUser: (id: number) =>
+      api.delete(`/api/admin/users/${id}`)
   }
 
   // Album API
@@ -58,10 +66,7 @@ export default defineNuxtPlugin((nuxtApp) => {
     get: (id: number) =>
       api.get(`/api/admin/albums/${id}`),
     create: (data: any) =>
-      api.post('/api/admin/albums', {
-        ...data,
-        cover_image: data.cover_image || DEFAULT_COVER
-      }),
+      api.post('/api/admin/albums', data),
     update: (id: number, data: any) =>
       api.put(`/api/admin/albums/${id}`, data),
     delete: (id: number) =>

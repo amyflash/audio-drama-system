@@ -66,5 +66,9 @@ export const update = (id: number, data: Partial<EpisodeCreate>) =>
 export const remove = (id: number) =>
   api.delete(`/api/admin/episodes/${id}`)
 
+// 别名方法，保持与其他 API 一致
+export const delete = (id: number) =>
+  api.delete(`/api/admin/episodes/${id}`)
+
 export const getStreamUrl = (id: number, baseURL?: string) =>
   `${baseURL || process.env.NUXT_API_BASE_URL || 'https://h.1006868.xyz'}/api/stream/${id}`

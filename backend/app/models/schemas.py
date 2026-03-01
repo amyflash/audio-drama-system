@@ -40,7 +40,7 @@ class LoginResponse(BaseModel):
 # ==================== Album ====================
 class AlbumCreate(BaseModel):
     title: str
-    cover_image: str  # Base64编码的图片
+    cover_image: Optional[str] = None  # Base64编码的图片，可选
     description: Optional[str] = None
     sort_order: int = 0
 

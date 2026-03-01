@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from app.db.base import get_db, init_db
 from app.core.config import settings
-from app.api import auth, albums, episodes, upload, stream
+from app.api import auth, albums, episodes, upload, stream, users
 
 # 创建FastAPI应用
 app = FastAPI(
@@ -29,6 +29,7 @@ app.include_router(albums.router, prefix="/api/admin")
 app.include_router(episodes.router, prefix="/api/admin")
 app.include_router(upload.router, prefix="/api/admin")
 app.include_router(stream.router, prefix="/api")
+app.include_router(users.router, prefix="/api/admin")
 
 
 # 健康检查
