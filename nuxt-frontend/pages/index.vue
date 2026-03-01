@@ -1,0 +1,512 @@
+<template>
+  <div style="min-height: 100vh; background: linear-gradient(to bottom right, #eff6ff, #f3e8ff); padding-bottom: 48px;">
+    <!-- Toast 提示容器 -->
+    <div v-if="toast.show" :style="{
+      position: 'fixed',
+      top: '20px',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      zIndex: 9999,
+      padding: '12px 24px',
+      borderRadius: '8px',
+      backgroundColor: toast.type === 'error' ? '#fee2e2' : toast.type === 'success' ? '#dcfce7' : '#fef3c7',
+      color: toast.type === 'error' ? '#991b1b' : toast.type === 'success' ? '#166534' : '#92400e',
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+      animation: 'slideIn 0.3s ease-out'
+    }">
+      {{ toast.message }}
+    </div>
+
+    <!-- 移动端优化的用户头部 -->
+    <div style="background-color: white; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); border-bottom: 1px solid #e5e7eb; padding: 12px 16px; position: sticky; top: 0; z-index: 50;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 8px 12px;">
+          <div style="width: 32px; height: 32px; background: linear-gradient(to bottom right, #3b82f6, #a855f7); border-radius: 9999px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px;">
+            {{ user?.username?.charAt(0).toUpperCase() || 'U' }}
+          </div>
+          <div style="min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 4px 8px;">
+              <span style="font-weight: 600; color: #1f2937; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                {{ getUserDisplayName() }}
+              </span>
+              <span
+                v-if="isAdmin()"
+                style="display: inline-block; padding: 2px 8px; font-size: 12px; font-weight: 500; border-radius: 9999px; background-color: #fee2e2; color: #991b1b;"
+              >
+                管理员
+              </span>
+            </div>
+            <div style="font-size: 12px; color: #6b7280;">
+              {{ user?.is_active ? '在线' : '离线' }} · ID: {{ user?.id }}
+            </div>
+          </div>
+        </div>
+
+        <button
+          @click="handleLogout"
+          style="background-color: #fee2e2; color: #b91c1c; padding: 6px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; border: none; cursor: pointer; transition: background-color 0.2s;"
+          onmouseover="this.style.backgroundColor='#fecaca'"
+          onmouseout="this.style.backgroundColor='#fee2e2'"
+        >
+          退出登录
+        </button>
+      </div>
+    </div>
+
+    <div style="max-width: 80rem; margin: 0 auto; padding: 16px 24px;">
+      <!-- 页面标题和操作 -->
+      <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px 32px; @media (min-width: 640px) { flex-direction: row; justify-content: space-between; align-items: center; }">
+        <div>
+          <h1 style="font-size: 24px 28px; font-weight: bold; color: #1f2937; margin-bottom: 8px;">📚 我的专辑</h1>
+          <p style="color: #4b5563; font-size: 14px 16px;">管理你的广播剧专辑和音频内容</p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+          <button
+            v-if="isAdmin() && albums.length > 0"
+            @click="showSearchBox = !showSearchBox"
+            style="background-color: #6366f1; color: white; font-weight: 500; padding: 10px 16px; border-radius: 8px; border: none; cursor: pointer; transition: background-color 0.2s; font-size: 14px;"
+            onmouseover="this.style.backgroundColor='#4f46e5'"
+            onmouseout="this.style.backgroundColor='#6366f1'"
+          >
+            🔍 搜索
+          </button>
+          <button
+            v-if="isAdmin()"
+            @click="showCreateModal = true"
+            style="background-color: #2563eb; color: white; font-weight: 500; padding: 10px 16px; border-radius: 8px; border: none; cursor: pointer; transition: background-color 0.2s; font-size: 14px;"
+            onmouseover="this.style.backgroundColor='#1d4ed8'"
+            onmouseout="this.style.backgroundColor='#2563eb'"
+          >
+            <span style="font-size: 18px; margin-right: 4px;">＋</span>
+            新建专辑
+          </button>
+        </div>
+      </div>
+
+      <!-- 搜索框 -->
+      <div v-if="showSearchBox" style="background-color: white; border-radius: 12px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); padding: 16px; margin-bottom: 24px;">
+        <div style="display: flex; gap: 12px;">
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="搜索专辑标题或描述..."
+            style="flex: 1; padding: 10px 16px; border: 1px solid #d1d5db; border-radius: 8px; outline: none; font-size: 14px;"
+            onfocus="this.style.borderColor='#3b82f6'"
+            onblur="this.style.borderColor='#d1d5db'"
+            @keypress.enter="handleSearch"
+          />
+          <button
+            @click="handleSearch"
+            style="padding: 10px 20px; background-color: #2563eb; color: white; font-weight: 500; border-radius: 8px; border: none; cursor: pointer; transition: background-color 0.2s; font-size: 14px;"
+            onmouseover="this.style.backgroundColor='#1d4ed8'"
+            onmouseout="this.style.backgroundColor='#2563eb'"
+          >
+            搜索
+          </button>
+          <button
+            v-if="searchQuery"
+            @click="clearSearch"
+            style="padding: 10px 20px; background-color: #9ca3af; color: white; font-weight: 500; border-radius: 8px; border: none; cursor: pointer; transition: background-color 0.2s; font-size: 14px;"
+            onmouseover="this.style.backgroundColor='#6b7280'"
+            onmouseout="this.style.backgroundColor='#9ca3af'"
+          >
+            清除
+          </button>
+        </div>
+        <p v-if="searching" style="color: #6b7280; font-size: 12px; margin-top: 8px;">正在搜索...</p>
+        <p v-else-if="searched && filteredAlbums.length === 0 && albums.length > 0" style="color: #ef4444; font-size: 12px; margin-top: 8px;">未找到匹配的专辑</p>
+        <p v-else-if="searched && filteredAlbums.length > 0" style="color: #10b981; font-size: 12px; margin-top: 8px;">找到 {{ filteredAlbums.length }} 个匹配的专辑</p>
+      </div>
+
+      <!-- 空状态 -->
+      <div v-if="!loading && albums.length === 0" style="background-color: white; border-radius: 12px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); padding: 32px 48px; text-align: center;">
+        <div style="font-size: 48px 64px; margin-bottom: 16px;">📭</div>
+        <h3 style="font-size: 18px 20px; font-weight: 600; color: #374151; margin-bottom: 8px;">暂无专辑</h3>
+        <p style="color: #6b7280; font-size: 14px 16px; margin-bottom: 24px;">点击"新建专辑"按钮创建你的第一个专辑</p>
+      </div>
+
+      <!-- 加载状态 -->
+      <div v-else-if="loading" style="display: flex; justify-content: center; padding: 48px;">
+        <div style="color: #3b82f6; font-size: 14px;">加载中...</div>
+      </div>
+
+      <!-- 专辑列表 - 响应式网格 -->
+      <div v-else style="display: grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap: 16px 24px; @media (min-width: 640px) { grid-template-columns: repeat(2, minmax(0, 1fr)); } @media (min-width: 1024px) { grid-template-columns: repeat(3, minmax(0, 1fr)); }">
+        <div
+          v-for="album in filteredAlbums"
+          :key="album.id"
+          style="background-color: white; border-radius: 12px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); overflow: hidden; cursor: pointer; transition: all 0.2s; position: relative;"
+        >
+          <!-- 管理员操作按钮（仅管理员显示） -->
+          <div v-if="isAdmin()" style="position: absolute; top: 8px; right: 8px; z-index: 10; display: flex; gap: 8px;">
+            <button
+              @click.stop="handleEdit(album)"
+              style="background-color: rgba(37, 99, 235, 0.9); color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 500; border: none; cursor: pointer; transition: background-color 0.2s;"
+              onmouseover="this.style.backgroundColor='#1d4ed8'"
+              onmouseout="this.style.backgroundColor='rgba(37, 99, 235, 0.9)'"
+            >
+              ✏️ 编辑
+            </button>
+            <button
+              @click.stop="handleDelete(album)"
+              style="background-color: rgba(239, 68, 68, 0.9); color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 500; border: none; cursor: pointer; transition: background-color 0.2s;"
+              onmouseover="this.style.backgroundColor='#dc2626'"
+              onmouseout="this.style.backgroundColor='rgba(239, 68, 68, 0.9)'"
+            >
+              🗑️ 删除
+            </button>
+          </div>
+          <!-- 封面图 -->
+          <div style="height: 160px 192px; position: relative; overflow: hidden; background: linear-gradient(to bottom right, #818cf8, #a855f7);">
+            <div
+              v-if="album.cover_image"
+              :style="{
+                width: '100%',
+                height: '100%',
+                backgroundImage: `url(${album.cover_image})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }"
+            ></div>
+            <div v-else style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+              <span style="color: white; font-size: 48px 64px; opacity: 0.8;">📚</span>
+            </div>
+            <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.5), transparent); padding: 12px 16px;">
+              <span style="color: white; font-size: 12px 14px; font-weight: 500;">{{ album.episode_count }} 个音频</span>
+            </div>
+          </div>
+
+          <!-- 专辑信息 -->
+          <div @click="navigateTo(`/albums/${album.id}`)" style="padding: 16px 20px;">
+            <h2 style="font-weight: bold; font-size: 16px 18px; color: #1f2937; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+              {{ album.title }}
+            </h2>
+            <p style="color: #6b7280; font-size: 12px 14px; margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+              {{ album.description || '暂无描述' }}
+            </p>
+            <div style="display: flex; align-items: center; font-size: 12px; color: #9ca3af;">
+              <span>{{ formatDate(album.created_at) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 创建专辑弹窗 -->
+    <div v-if="showCreateModal" style="position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 16px;">
+      <div style="background-color: white; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); width: 100%; max-width: 448px;">
+        <div style="padding: 16px 24px;">
+          <h2 style="font-size: 20px 24px; font-weight: bold; color: #1f2937; margin-bottom: 16px 24px;">新建专辑</h2>
+
+          <form @submit.prevent="handleCreate">
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; color: #374151; font-size: 14px; font-weight: bold; margin-bottom: 8px;">标题</label>
+              <input
+                v-model="newAlbum.title"
+                type="text"
+                placeholder="请输入专辑标题"
+                required
+                style="width: 100%; padding: 8px 16px 12px; border: 1px solid #d1d5db; border-radius: 8px; outline: none; transition: border-color 0.2s;"
+                onfocus="this.style.borderColor='#3b82f6'"
+                onblur="this.style.borderColor='#d1d5db'"
+              />
+            </div>
+
+            <div style="margin-bottom: 24px;">
+              <label style="display: block; color: #374151; font-size: 14px; font-weight: bold; margin-bottom: 8px;">描述</label>
+              <textarea
+                v-model="newAlbum.description"
+                placeholder="请输入专辑描述（可选）"
+                rows="3"
+                style="width: 100%; padding: 8px 16px 12px; border: 1px solid #d1d5db; border-radius: 8px; outline: none; transition: border-color 0.2s; resize: none;"
+                onfocus="this.style.borderColor='#3b82f6'"
+                onblur="this.style.borderColor='#d1d5db'"
+              ></textarea>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px;">
+              <button
+                type="button"
+                @click="showCreateModal = false"
+                style="padding: 8px 16px; border: 1px solid #d1d5db; border-radius: 8px; background-color: white; color: #374151; font-weight: 500; cursor: pointer; transition: background-color 0.2s;"
+                onmouseover="this.style.backgroundColor='#f9fafb'"
+                onmouseout="this.style.backgroundColor='white'"
+              >
+                取消
+              </button>
+              <button
+                type="submit"
+                :disabled="creating"
+                style="padding: 8px 16px; background-color: #2563eb; color: white; border-radius: 8px; font-weight: 500; cursor: pointer; transition: background-color 0.2s; border: none;"
+                onmouseover="!this.disabled && (this.style.backgroundColor='#1d4ed8')"
+                onmouseout="!this.disabled && (this.style.backgroundColor='#2563eb')"
+              >
+                {{ creating ? '创建中...' : '创建' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- 编辑专辑弹窗 -->
+    <div v-if="showEditModal" style="position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 16px;">
+      <div style="background-color: white; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); width: 100%; max-width: 448px;">
+        <div style="padding: 16px 24px;">
+          <h2 style="font-size: 20px 24px; font-weight: bold; color: #1f2937; margin-bottom: 16px 24px;">编辑专辑</h2>
+
+          <form @submit.prevent="handleUpdate">
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; color: #374151; font-size: 14px; font-weight: bold; margin-bottom: 8px;">标题</label>
+              <input
+                v-model="editingAlbum.title"
+                type="text"
+                placeholder="请输入专辑标题"
+                required
+                style="width: 100%; padding: 8px 16px 12px; border: 1px solid #d1d5db; border-radius: 8px; outline: none; transition: border-color 0.2s;"
+                onfocus="this.style.borderColor='#3b82f6'"
+                onblur="this.style.borderColor='#d1d5db'"
+              />
+            </div>
+
+            <div style="margin-bottom: 24px;">
+              <label style="display: block; color: #374151; font-size: 14px; font-weight: bold; margin-bottom: 8px;">描述</label>
+              <textarea
+                v-model="editingAlbum.description"
+                placeholder="请输入专辑描述（可选）"
+                rows="3"
+                style="width: 100%; padding: 8px 16px 12px; border: 1px solid #d1d5db; border-radius: 8px; outline: none; transition: border-color 0.2s; resize: none;"
+                onfocus="this.style.borderColor='#3b82f6'"
+                onblur="this.style.borderColor='#d1d5db'"
+              ></textarea>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px;">
+              <button
+                type="button"
+                @click="showEditModal = false"
+                style="padding: 8px 16px; border: 1px solid #d1d5db; border-radius: 8px; background-color: white; color: #374151; font-weight: 500; cursor: pointer; transition: background-color 0.2s;"
+                onmouseover="this.style.backgroundColor='#f9fafb'"
+                onmouseout="this.style.backgroundColor='white'"
+              >
+                取消
+              </button>
+              <button
+                type="submit"
+                :disabled="updating"
+                style="padding: 8px 16px; background-color: #2563eb; color: white; border-radius: 8px; font-weight: 500; cursor: pointer; transition: background-color 0.2s; border: none;"
+                onmouseover="!this.disabled && (this.style.backgroundColor='#1d4ed8')"
+                onmouseout="!this.disabled && (this.style.backgroundColor='#2563eb')"
+              >
+                {{ updating ? '更新中...' : '更新' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, computed } from 'vue'
+
+const { $albumApi } = useNuxtApp()
+
+// 从 localStorage 获取用户信息
+const user = computed(() => {
+  if (import.meta.client) {
+    const userData = localStorage.getItem('user')
+    return userData ? JSON.parse(userData) : null
+  }
+  return null
+})
+
+const getUserDisplayName = () => {
+  return user.value?.first_name && user.value?.last_name
+    ? `${user.value.first_name} ${user.value.last_name}`
+    : user.value?.username || '未知用户'
+}
+
+const isAdmin = () => {
+  return user.value?.is_superuser || false
+}
+
+const albums = ref<any[]>([])
+const filteredAlbums = ref<any[]>([])
+const loading = ref(true)
+const creating = ref(false)
+const updating = ref(false)
+const showCreateModal = ref(false)
+const showEditModal = ref(false)
+const showSearchBox = ref(false)
+const newAlbum = ref({ title: '', description: '', cover_image: '' })
+const editingAlbum = ref({ id: 0, title: '', description: '', cover_image: '' })
+const searchQuery = ref('')
+const searching = ref(false)
+const searched = ref(false)
+
+// 自定义 Toast 状态
+const toast = ref({
+  show: false,
+  message: '',
+  type: 'info' as 'success' | 'error' | 'warning'
+})
+
+// 显示 Toast 提示
+const showToast = (message: string, type: 'success' | 'error' | 'warning' = 'info') => {
+  toast.value = { show: true, message, type }
+  setTimeout(() => {
+    toast.value.show = false
+  }, 3000)
+}
+
+const loadAlbums = async () => {
+  loading.value = true
+  try {
+    const response = await $albumApi.list()
+    albums.value = response.data.items
+    filteredAlbums.value = response.data.items
+  } catch (error) {
+    showToast('加载专辑失败', 'error')
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleCreate = async () => {
+  if (!newAlbum.value.title.trim()) {
+    showToast('请输入专辑标题', 'warning')
+    return
+  }
+
+  creating.value = true
+  try {
+    await $albumApi.create({
+      title: newAlbum.value.title,
+      description: newAlbum.value.description || undefined,
+      cover_image: ''
+    })
+    showToast('专辑创建成功', 'success')
+    showCreateModal.value = false
+    newAlbum.value = { title: '', description: '', cover_image: '' }
+    await loadAlbums()
+  } catch (error) {
+    showToast('创建专辑失败', 'error')
+  } finally {
+    creating.value = false
+  }
+}
+
+const handleEdit = (album: any) => {
+  editingAlbum.value = { ...album }
+  showEditModal.value = true
+}
+
+const handleUpdate = async () => {
+  if (!editingAlbum.value.title.trim()) {
+    showToast('请输入专辑标题', 'warning')
+    return
+  }
+
+  updating.value = true
+  try {
+    await $albumApi.update(editingAlbum.value.id, {
+      title: editingAlbum.value.title,
+      description: editingAlbum.value.description || undefined,
+      cover_image: editingAlbum.value.cover_image || '/default-cover.svg'
+    })
+    showToast('专辑更新成功', 'success')
+    showEditModal.value = false
+    editingAlbum.value = { id: 0, title: '', description: '', cover_image: '' }
+    await loadAlbums()
+  } catch (error) {
+    showToast('更新专辑失败', 'error')
+  } finally {
+    updating.value = false
+  }
+}
+
+const handleDelete = async (album: any) => {
+  if (confirm(`确定要删除专辑"${album.title}"吗？删除后无法恢复！`)) {
+    try {
+      await $albumApi.delete(album.id)
+      showToast('专辑删除成功', 'success')
+      await loadAlbums()
+    } catch (error) {
+      showToast('删除专辑失败', 'error')
+    }
+  }
+}
+
+const handleSearch = async () => {
+  if (!searchQuery.value.trim()) {
+    showToast('请输入搜索关键词', 'warning')
+    return
+  }
+
+  searching.value = true
+  searched.value = true
+
+  try {
+    // 前端过滤（如果后端没有搜索接口）
+    const query = searchQuery.value.toLowerCase()
+    filteredAlbums.value = albums.value.filter(album => 
+      album.title?.toLowerCase().includes(query) ||
+      album.description?.toLowerCase().includes(query)
+    )
+    showToast(`找到 ${filteredAlbums.value.length} 个匹配的专辑`, 'success')
+  } catch (error) {
+    showToast('搜索失败', 'error')
+  } finally {
+    searching.value = false
+  }
+}
+
+const clearSearch = () => {
+  searchQuery.value = ''
+  searched.value = false
+  filteredAlbums.value = [...albums.value]
+  showSearchBox.value = false
+}
+
+const handleLogout = async () => {
+  if (confirm('确定要退出登录吗？')) {
+    try {
+      if (import.meta.client) {
+        localStorage.removeItem('user')
+        localStorage.removeItem('token')
+      }
+    } catch (error) {
+      // Ignore logout error
+    }
+    await navigateTo('/login')
+  }
+}
+
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  })
+}
+
+onMounted(() => {
+  loadAlbums()
+})
+</script>
+
+<style scoped>
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+</style>
