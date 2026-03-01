@@ -15,8 +15,10 @@ export interface EpisodeCreate {
   sort_order?: number
 }
 
-export const getByAlbum = (albumId: number) =>
-  api.get<{items: Episode[], album_id: number}>(`/api/admin/albums/${albumId}/episodes`)
+export const getByAlbum = (albumId: number, fields?: string) =>
+  api.get<{items: Episode[], album_id: number, total: number, page: number, page_size: number}>(
+    `/api/admin/albums/${albumId}/episodes${fields ? `?fields=${fields}` : ''}`
+  )
 
 export const get = (id: number) =>
   api.get<Episode>(`/api/admin/episodes/${id}`)

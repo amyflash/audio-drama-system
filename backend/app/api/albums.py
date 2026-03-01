@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, status, HTTPException, Query, Form, UploadFile, File
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 import os
 import aiofiles
 import uuid
@@ -158,9 +158,12 @@ MEDIA_DIR = "/media/albums"
 async def get_album_episodes(
     album_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(100, ge=1, le=500),
+    fields: Optional[str] = Query(None, description="返回字段: id,title,duration,created_at")
 ):
-    """获取专辑的剧集列表"""
+    """获取专辑的剧集列表（分页，支持字段过滤）"""
     album = db.query(Album).filter(Album.id == album_id).first()
     if not album:
         raise HTTPException(
@@ -168,25 +171,34 @@ async def get_album_episodes(
             detail="专辑不存在"
         )
 
+    # 计算总数
+    total = db.query(Episode).filter(Episode.album_id == album_id).count()
+
+    # 查询剧集（分页）
     episodes = db.query(Episode).filter(
         Episode.album_id == album_id
-    ).order_by(Episode.sort_order.asc()).all()
+    ).order_by(Episode.sort_order.asc()).offset((page - 1) * page_size).limit(page_size).all()
 
-    items = [
-        {
-            "id": ep.id,
-            "album_id": ep.album_id,
-            "title": ep.title,
-            "duration": ep.duration,
-            "sort_order": ep.sort_order,
-            "created_at": ep.created_at,
-            "stream_url": f"/api/stream/{ep.id}"
-        }
-        for ep in episodes
-    ]
+    # 根据请求字段返回数据
+    requested_fields = fields.split(',') if fields else ['id', 'title', 'duration', 'sort_order', 'created_at']
+
+    items = []
+    for ep in episodes:
+        item = {}
+        for field in requested_fields:
+            if field == 'stream_url':
+                item[field] = f"/api/stream/{ep.id}"
+            elif hasattr(ep, field):
+                item[field] = getattr(ep, field)
+            elif field == 'date':
+                item[field] = ep.created_at.isoformat() if ep.created_at else None
+        items.append(item)
 
     return {
         "album_id": album_id,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
         "items": items
     }
 

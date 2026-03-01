@@ -237,71 +237,60 @@
         <p style="color: #6b7280; font-size: 14px 16px;">点击上方按钮添加你的第一个音频</p>
       </div>
 
-      <!-- 单集列表 - 移动端优化（左滑显示按钮） -->
-      <div v-else style="display: flex; flex-direction: column; gap: 12px;">
+      <!-- 单集列表 - 简化布局（只显示文件名、时长和操作） -->
+      <div v-else style="display: flex; flex-direction: column; gap: 8px;">
         <div
           v-for="episode in filteredEpisodes"
           :key="episode.id"
-          style="display: flex; position: relative; overflow: hidden; border-radius: 12px;"
+          style="display: flex; align-items: center; background-color: white; border-radius: 8px; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); padding: 12px 16px; transition: box-shadow 0.2s;"
+          onmouseover="this.style.boxShadow='0 2px 4px -1px rgba(0, 0, 0, 0.1)'"
+          onmouseout="this.style.boxShadow='0 1px 2px 0 rgba(0, 0, 0, 0.05)'"
         >
-          <!-- 单集内容区域 -->
+          <!-- 文件名和时长 -->
           <div
             @click="navigateTo(`/player/${episode.id}`)"
-            style="flex: 1; background-color: white; border-radius: 12px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); padding: 16px; cursor: pointer; transition: box-shadow 0.2s; position: relative; z-index: 10;"
-            onmouseover="this.style.boxShadow='0 4px 6px -1px rgba(0, 0, 0, 0.1)'"
-            onmouseout="this.style.boxShadow='0 1px 3px 0 rgba(0, 0, 0, 0.1)'"
+            style="flex: 1; min-width: 0; cursor: pointer; display: flex; flex-direction: column; gap: 4px;"
           >
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <!-- 音频图标 -->
-              <div
-                @click.stop="navigateTo(`/player/${episode.id}`)"
-                style="width: 40px 48px; height: 40px 48px; background-color: #eff6ff; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px 20px; flex-shrink: 0; cursor: pointer;"
-              >
-                🎵
-              </div>
-
-              <!-- 单集信息 -->
-              <div style="flex: 1; min-width: 0;">
-                <h3 style="font-weight: bold; font-size: 16px 18px; color: #1f2937; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                  {{ episode.title }}
-                </h3>
-                <div style="display: flex; flex-wrap: gap: 8px 16px; font-size: 12px 14px; color: #6b7280;">
-                  <span>⏱️ {{ formatDuration(episode.duration) }}</span>
-                  <span>📅 {{ formatShortDate(episode.created_at) }}</span>
-                </div>
-              </div>
-
-              <!-- 播放按钮 -->
-              <div style="display: flex; align-items: center; flex-shrink: 0;">
-                <button
-                  @click.stop="navigateTo(`/player/${episode.id}`)"
-                  style="background-color: #10b981; color: white; width: 40px 48px; height: 40px 48px; border-radius: 9999px; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; font-size: 18px 20px; transition: background-color 0.2s;"
-                  onmouseover="this.style.backgroundColor='#059669'"
-                  onmouseout="this.style.backgroundColor='#10b981'"
-                >
-                  ▶️
-                </button>
-              </div>
+            <div
+              style="font-weight: 500; font-size: 14px 15px; color: #1f2937; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+            >
+              {{ episode.title }}
+            </div>
+            <div style="font-size: 12px 13px; color: #6b7280;">
+              ⏱️ {{ formatDuration(episode.duration) }}
             </div>
           </div>
 
-          <!-- 按钮区域（右侧）-->
-          <div v-if="isAdmin" style="flex-shrink: 0; width: 80px; display: flex; z-index: 20; position: absolute; right: 0; top: 0; bottom: 0;">
-            <div
-              @click.stop="handleEditEpisode(episode)"
-              style="flex: 1; background-color: #10b981; color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; cursor: pointer; transition: background-color 0.2s;"
+          <!-- 操作按钮 -->
+          <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+            <!-- 播放按钮 -->
+            <button
+              @click="navigateTo(`/player/${episode.id}`)"
+              style="width: 32px 36px; height: 32px 36px; background-color: #10b981; color: white; border-radius: 6px; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; font-size: 14px; transition: background-color 0.2s;"
               onmouseover="this.style.backgroundColor='#059669'"
               onmouseout="this.style.backgroundColor='#10b981'"
             >
-              ✏️
-            </div>
-            <div
-              @click.stop="handleDeleteEpisode(episode.id)"
-              style="flex: 1; background-color: #dc2626; color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; cursor: pointer; transition: background-color 0.2s;"
-              onmouseover="this.style.backgroundColor='#b91c1c'"
-              onmouseout="this.style.backgroundColor='#dc2626'"
-            >
-              🗑️
+              ▶️
+            </button>
+
+            <!-- 编辑和删除按钮（仅管理员） -->
+            <div v-if="isAdmin" style="display: flex; gap: 4px;">
+              <button
+                @click="handleEditEpisode(episode)"
+                style="width: 32px 36px; height: 32px 36px; background-color: #10b981; color: white; border-radius: 6px; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; font-size: 12px; transition: background-color 0.2s;"
+                onmouseover="this.style.backgroundColor='#059669'"
+                onmouseout="this.style.backgroundColor='#10b981'"
+              >
+                ✏️
+              </button>
+              <button
+                @click="handleDeleteEpisode(episode.id)"
+                style="width: 32px 36px; height: 32px 36px; background-color: #dc2626; color: white; border-radius: 6px; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; font-size: 12px; transition: background-color 0.2s;"
+                onmouseover="this.style.backgroundColor='#b91c1c'"
+                onmouseout="this.style.backgroundColor='#dc2626'"
+              >
+                🗑️
+              </button>
             </div>
           </div>
         </div>
@@ -553,7 +542,8 @@ const loadAlbum = async () => {
 
 const loadEpisodes = async () => {
   try {
-    const response = await $episodeApi.getByAlbum(albumId.value)
+    // 只请求必要的字段，减少数据传输量
+    const response = await $episodeApi.getByAlbum(albumId.value, 'id,title,duration')
     episodes.value = response.data.items
     filteredEpisodes.value = response.data.items
   } catch (error) {
