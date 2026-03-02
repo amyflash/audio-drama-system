@@ -34,9 +34,9 @@ services:
     networks:
       - audio-drama-net
 
-  frontend:
-    build: ./frontend
-    container_name: audio-drama-frontend
+  nuxt-frontend:
+    build: ./nuxt-frontend
+    container_name: audio-drama-nuxt
     restart: unless-stopped
     depends_on:
       - backend

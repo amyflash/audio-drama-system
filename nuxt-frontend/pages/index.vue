@@ -692,6 +692,12 @@ const formatDate = (dateString: string) => {
 }
 
 onMounted(() => {
+  // 未登录用户直接跳转到登录页
+  if (!user.value) {
+    navigateTo('/login')
+    return
+  }
+
   loadAlbums()
 })
 </script>

@@ -1,7 +1,8 @@
+# 修正后的 requirements.txt
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
 sqlalchemy==2.0.23
-pydantic==2.5.2
+pydantic==2.5.2          # 保留你的指定版本，适配对应的 pydantic-core
 pydantic-settings==2.1.0
 python-multipart==0.0.6
 python-jose[cryptography]==3.3.0
@@ -10,3 +11,6 @@ bcrypt==4.1.2
 redis==5.0.1
 aiofiles==23.2.1
 mutagen==1.47.0
+
+# 新增：显式指定 pydantic==2.5.2 兼容的 pydantic-core 版本（避免版本找不到）
+pydantic-core==2.14.6    # 2.5.2 对应的核心包版本（替代找不到的 2.14.5）

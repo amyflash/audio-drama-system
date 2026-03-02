@@ -1,5 +1,11 @@
 import axios from 'axios'
 
+declare const process: {
+  env: {
+    NUXT_PUBLIC_API_BASE_URL?: string
+  }
+}
+
 const baseURL = process.env.NUXT_PUBLIC_API_BASE_URL || 'https://h.1006868.xyz'
 
 const api = axios.create({

@@ -11,17 +11,17 @@ docker-compose up -d backend redis
 # 等待后端启动
 sleep 3
 
-# 启动前端（Vite 开发服务器）
-echo "🎨 启动前端服务..."
-cd frontend
+# 启动前端（Nuxt 开发服务器）
+echo "🎨 启动 Nuxt 前端服务..."
+cd nuxt-frontend
 
 # 检查是否已有 Vite 进程
 if pgrep -f "vite.*5173" > /dev/null; then
     echo "✅ 前端服务已在运行"
 else
     # 使用 nohup 启动，确保在后台持续运行
-    nohup npm run dev > /tmp/frontend.log 2>&1 &
-    echo "✅ 前端服务已启动 (PID: $!)"
+    nohup npm run dev > /tmp/nuxt-frontend.log 2>&1 &
+    echo "✅ Nuxt 前端服务已启动 (PID: $!)"
 
     # 等待 Vite 启动
     echo "⏳ 等待前端服务就绪..."
