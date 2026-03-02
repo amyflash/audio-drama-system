@@ -43,7 +43,7 @@
       </div>
     </div>
 
-    <div style="max-width: 80rem; margin: 0 auto; padding: 16px 24px;">
+    <div class="page-container" style="max-width: 80rem; margin: 0 auto; padding: 16px 24px;">
       <!-- 加载状态 - 骨架屏 -->
       <div v-if="loading" style="background-color: white; border-radius: 12px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); padding: 24px; margin-bottom: 24px;">
         <!-- 专辑信息骨架 -->
@@ -85,7 +85,7 @@
       </div>
 
       <!-- 专辑信息 - 移动端优化 -->
-      <div v-else-if="album" style="background-color: white; border-radius: 12px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); padding: 16px 24px; margin-bottom: 24px;">
+      <div v-else-if="album" class="album-card" style="background-color: white; border-radius: 12px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); padding: 16px 24px; margin-bottom: 24px;">
         
           <!-- 专辑信息 -->
           <div style="flex: 1; text-align: center; @media (min-width: 640px) { text-align: left; }">
@@ -222,10 +222,11 @@
       </div>
 
       <!-- 单集列表 - 简化布局（只显示文件名、时长和操作） -->
-      <div v-else style="display: flex; flex-direction: column; gap: 8px;">
+      <div v-else class="episode-list" style="display: flex; flex-direction: column; gap: 8px;">
         <div
           v-for="episode in filteredEpisodes"
           :key="episode.id"
+          class="episode-item"
           style="display: flex; align-items: center; background-color: white; border-radius: 8px; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); padding: 12px 16px; transition: box-shadow 0.2s;"
           onmouseover="this.style.boxShadow='0 2px 4px -1px rgba(0, 0, 0, 0.1)'"
           onmouseout="this.style.boxShadow='0 1px 2px 0 rgba(0, 0, 0, 0.05)'"
@@ -748,6 +749,43 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* 页面整体容器：手机端左右留白更小，避免水平滚动 */
+.page-container {
+  padding: 12px 12px;
+}
+
+@media (min-width: 640px) {
+  .page-container {
+    padding: 16px 24px;
+  }
+}
+
+/* 专辑卡片：手机端内容垂直居中、留白更紧凑 */
+.album-card {
+  padding: 16px 16px;
+}
+
+@media (min-width: 640px) {
+  .album-card {
+    padding: 16px 24px;
+  }
+}
+
+/* 单集列表：保证手机端每项之间有足够的点击间距 */
+.episode-list {
+  gap: 10px;
+}
+
+.episode-item {
+  padding: 12px 12px;
+}
+
+@media (min-width: 640px) {
+  .episode-item {
+    padding: 12px 16px;
+  }
+}
+
 @keyframes slideIn {
   from {
     opacity: 0;
