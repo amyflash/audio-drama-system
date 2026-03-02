@@ -145,53 +145,46 @@
         <p style="color: #6b7280; font-size: 14px 16px; margin-bottom: 24px;">点击"新建专辑"按钮创建你的第一个专辑</p>
       </div>
 
-      <!-- 加载状态 - 骨架屏 -->
+      <!-- 加载状态 - 骨架屏（无封面，仅信息块） -->
       <div v-else-if="loading" class="album-grid">
         <!-- 骨架屏卡片 x6 -->
         <div
           v-for="i in 6"
           :key="'skeleton-' + i"
-          style="background-color: white; border-radius: 12px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); overflow: hidden;"
+          style="background-color: white; border-radius: 12px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); overflow: hidden; padding: 16px 20px;"
         >
-          <!-- 封面骨架 -->
           <div
             :style="{
-              width: '100%',
-              height: '160px 192px',
+              height: '20px',
               background: 'linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%)',
               backgroundSize: '200% 100%',
               animation: 'shimmer 1.5s infinite',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
+              borderRadius: '4px',
+              marginBottom: '8px',
+              maxWidth: '70%'
             }"
-          >
-            <div style="font-size: 32px; opacity: 0.3;">📚</div>
-          </div>
-          <!-- 内容骨架 -->
-          <div style="padding: 14px 16px;">
-            <div
-              :style="{
-                height: '20px',
-                background: 'linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%)',
-                backgroundSize: '200% 100%',
-                animation: 'shimmer 1.5s infinite',
-                borderRadius: '4px',
-                marginBottom: '8px',
-                maxWidth: '80%'
-              }"
-            ></div>
-            <div
-              :style="{
-                height: '16px',
-                background: 'linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%)',
-                backgroundSize: '200% 100%',
-                animation: 'shimmer 1.5s infinite',
-                borderRadius: '4px',
-                maxWidth: '60%'
-              }"
-            ></div>
-          </div>
+          ></div>
+          <div
+            :style="{
+              height: '16px',
+              background: 'linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%)',
+              backgroundSize: '200% 100%',
+              animation: 'shimmer 1.5s infinite',
+              borderRadius: '4px',
+              marginBottom: '6px',
+              maxWidth: '90%'
+            }"
+          ></div>
+          <div
+            :style="{
+              height: '14px',
+              background: 'linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%)',
+              backgroundSize: '200% 100%',
+              animation: 'shimmer 1.5s infinite',
+              borderRadius: '4px',
+              maxWidth: '50%'
+            }"
+          ></div>
         </div>
       </div>
 
@@ -202,30 +195,13 @@
           :key="album.id"
           style="display: flex; position: relative; overflow: hidden; border-radius: 12px;"
         >
-          <!-- 专辑卡片内容 -->
+          <!-- 专辑卡片内容（无封面，仅信息块） -->
           <div
             @click="navigateTo(`/albums/${album.id}`)"
             style="flex: 1; background-color: white; border-radius: 12px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); overflow: hidden; cursor: pointer; transition: box-shadow 0.2s; position: relative; z-index: 10;"
             onmouseover="this.style.boxShadow='0 4px 6px -1px rgba(0, 0, 0, 0.1)'"
             onmouseout="this.style.boxShadow='0 1px 3px 0 rgba(0, 0, 0, 0.1)'"
           >
-            <!-- 封面图 -->
-            <div class="album-cover">
-              <img
-                v-if="album.cover_image"
-                :src="album.cover_image"
-                :alt="album.title"
-                loading="lazy"
-                style="width: 100%; height: 100%; object-fit: cover;"
-              />
-              <div v-else class="album-cover-empty">
-                <span class="album-cover-empty-icon">📚</span>
-              </div>
-              <div class="album-cover-footer">
-                <span class="album-cover-footer-text">{{ album.episode_count }} 个音频</span>
-              </div>
-            </div>
-
             <!-- 专辑信息 -->
             <div style="padding: 16px 20px;">
               <h2 class="album-title">
@@ -750,42 +726,6 @@ onMounted(() => {
   gap: 12px 16px;
 }
 
-.album-cover {
-  height: 160px;
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(to bottom right, #34d399, #059669);
-}
-
-.album-cover-empty {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.album-cover-empty-icon {
-  color: #ffffff;
-  font-size: 40px;
-  opacity: 0.8;
-}
-
-.album-cover-footer {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.5), transparent);
-  padding: 8px 12px;
-}
-
-.album-cover-footer-text {
-  color: #ffffff;
-  font-size: 12px;
-  font-weight: 500;
-}
-
 .album-title {
   font-weight: 700;
   font-size: 15px;
@@ -827,14 +767,6 @@ onMounted(() => {
   .album-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px 20px;
-  }
-
-  .album-cover {
-    height: 180px;
-  }
-
-  .album-cover-empty-icon {
-    font-size: 48px;
   }
 }
 
