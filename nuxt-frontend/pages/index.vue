@@ -64,12 +64,12 @@
       </div>
     </div>
 
-    <div style="max-width: 80rem; margin: 0 auto; padding: 16px 24px;">
+    <div style="max-width: 80rem; margin: 0 auto; padding: 12px 12px 16px;">
       <!-- 页面标题和操作 -->
-      <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px 32px; @media (min-width: 640px) { flex-direction: row; justify-content: space-between; align-items: center; }">
+      <div class="page-header">
         <div>
-          <h1 style="font-size: 24px 28px; font-weight: bold; color: #1f2937; margin-bottom: 8px;">📚 我的专辑</h1>
-          <p style="color: #4b5563; font-size: 14px 16px;">管理你的广播剧专辑和音频内容</p>
+          <h1 class="page-title">📚 我的专辑</h1>
+          <p class="page-subtitle">管理你的广播剧专辑和音频内容</p>
         </div>
         <div style="display: flex; gap: 12px; flex-wrap: wrap;">
           <button
@@ -146,7 +146,7 @@
       </div>
 
       <!-- 加载状态 - 骨架屏 -->
-      <div v-else-if="loading" style="display: grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap: 16px 24px; @media (min-width: 640px) { grid-template-columns: repeat(2, minmax(0, 1fr)); } @media (min-width: 1024px) { grid-template-columns: repeat(3, minmax(0, 1fr)); }">
+      <div v-else-if="loading" class="album-grid">
         <!-- 骨架屏卡片 x6 -->
         <div
           v-for="i in 6"
@@ -196,7 +196,7 @@
       </div>
 
       <!-- 专辑列表 - 响应式网格（管理员左滑显示删除按钮） -->
-      <div v-else style="display: grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap: 16px 24px; @media (min-width: 640px) { grid-template-columns: repeat(2, minmax(0, 1fr)); } @media (min-width: 1024px) { grid-template-columns: repeat(3, minmax(0, 1fr)); }">
+      <div v-else class="album-grid">
         <div
           v-for="album in filteredAlbums"
           :key="album.id"
@@ -210,7 +210,7 @@
             onmouseout="this.style.boxShadow='0 1px 3px 0 rgba(0, 0, 0, 0.1)'"
           >
             <!-- 封面图 -->
-            <div style="height: 160px 192px; position: relative; overflow: hidden; background: linear-gradient(to bottom right, #34d399, #059669);">
+            <div class="album-cover">
               <img
                 v-if="album.cover_image"
                 :src="album.cover_image"
@@ -218,20 +218,20 @@
                 loading="lazy"
                 style="width: 100%; height: 100%; object-fit: cover;"
               />
-              <div v-else style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
-                <span style="color: white; font-size: 48px 64px; opacity: 0.8;">📚</span>
+              <div v-else class="album-cover-empty">
+                <span class="album-cover-empty-icon">📚</span>
               </div>
-              <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.5), transparent); padding: 12px 16px;">
-                <span style="color: white; font-size: 12px 14px; font-weight: 500;">{{ album.episode_count }} 个音频</span>
+              <div class="album-cover-footer">
+                <span class="album-cover-footer-text">{{ album.episode_count }} 个音频</span>
               </div>
             </div>
 
             <!-- 专辑信息 -->
             <div style="padding: 16px 20px;">
-              <h2 style="font-weight: bold; font-size: 16px 18px; color: #1f2937; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+              <h2 class="album-title">
                 {{ album.title }}
               </h2>
-              <p style="color: #6b7280; font-size: 12px 14px; margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+              <p class="album-desc">
                 {{ album.description || '暂无描述' }}
               </p>
               <div style="display: flex; align-items: center; font-size: 12px; color: #9ca3af;">
@@ -720,6 +720,127 @@ onMounted(() => {
   }
   100% {
     background-position: -200% 0;
+  }
+}
+
+/* 页面标题区域：默认针对手机优化 */
+.page-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.page-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 4px;
+}
+
+.page-subtitle {
+  color: #4b5563;
+  font-size: 13px;
+}
+
+/* 专辑网格：默认单列，手机更易点击 */
+.album-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 12px 16px;
+}
+
+.album-cover {
+  height: 160px;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(to bottom right, #34d399, #059669);
+}
+
+.album-cover-empty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.album-cover-empty-icon {
+  color: #ffffff;
+  font-size: 40px;
+  opacity: 0.8;
+}
+
+.album-cover-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.5), transparent);
+  padding: 8px 12px;
+}
+
+.album-cover-footer-text {
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.album-title {
+  font-weight: 700;
+  font-size: 15px;
+  color: #1f2937;
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.album-desc {
+  color: #6b7280;
+  font-size: 12px;
+  margin-bottom: 10px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 大屏时再增强布局 */
+@media (min-width: 640px) {
+  .page-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .page-title {
+    font-size: 24px;
+    margin-bottom: 8px;
+  }
+
+  .page-subtitle {
+    font-size: 14px;
+  }
+
+  .album-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 20px;
+  }
+
+  .album-cover {
+    height: 180px;
+  }
+
+  .album-cover-empty-icon {
+    font-size: 48px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .album-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 </style>
