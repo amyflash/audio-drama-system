@@ -86,23 +86,7 @@
 
       <!-- 专辑信息 - 移动端优化 -->
       <div v-else-if="album" style="background-color: white; border-radius: 12px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); padding: 16px 24px; margin-bottom: 24px;">
-        <div style="display: flex; flex-direction: column; gap: 16px 24px; @media (min-width: 640px) { flex-direction: row; }">
-          <!-- 专辑封面 -->
-          <div style="width: 100%; height: 128px; background: linear-gradient(to bottom right, #34d399, #059669); border-radius: 12px; display: flex; align-items: center; justify-content: center; @media (min-width: 640px) { width: 128px; height: 128px; }">
-            <div
-              v-if="album.cover_image"
-              :style="{
-                width: '100%',
-                height: '100%',
-                backgroundImage: `url(${album.cover_image})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                borderRadius: '12px'
-              }"
-            ></div>
-            <span v-else style="color: white; font-size: 48px;">📚</span>
-          </div>
-
+        
           <!-- 专辑信息 -->
           <div style="flex: 1; text-align: center; @media (min-width: 640px) { text-align: left; }">
             <h1 style="font-size: 24px 28px; font-weight: bold; color: #1f2937; margin-bottom: 8px;">{{ album.title }}</h1>
@@ -135,7 +119,7 @@
         <h2 style="font-size: 18px 20px; font-weight: bold; color: #1f2937;">
           🎧 单集列表 ({{ episodes.length }})
         </h2>
-        <div v-if="isAdmin()" style="display: flex; gap: 8px;">
+        <div v-if="isAdmin" style="display: flex; gap: 8px;">
           <button
             v-if="episodes.length > 0"
             @click="showSearchBox = !showSearchBox"
