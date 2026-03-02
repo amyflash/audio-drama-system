@@ -93,7 +93,7 @@
             <p style="color: #4b5563; font-size: 14px 16px; margin-bottom: 16px;">{{ album.description || '暂无描述' }}</p>
             <div style="display: flex; flex-wrap: justify-content: center; gap: 8px 16px; @media (min-width: 640px) { justify-content: flex-start; }">
               <span style="display: inline-block; padding: 4px 12px; font-size: 12px 14px; font-weight: 500; border-radius: 9999px; background-color: #dbeafe; color: #1e40af;">
-                {{ album.episode_count }} 个音频
+                {{ episodes.length }} 个音频
               </span>
               <span style="display: inline-block; padding: 4px 12px; font-size: 12px 14px; font-weight: 500; border-radius: 9999px; background-color: #f3f4f6; color: #374151;">
                 创建于 {{ formatDate(album.created_at) }}
