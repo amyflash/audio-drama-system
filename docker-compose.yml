@@ -14,9 +14,9 @@ services:
       - UPLOAD_MAX_FILE_SIZE=104857600
       - DEFAULT_ADMIN_PASSWORD=123456
     volumes:
-      - db_data:/app/data
-      - media_data:/media/albums
-      - backup_data:/app/backup
+      - /db_data:/app/data
+      - /media_data:/media/albums
+      - /backup_data:/app/backup
     ports:
       - "8000:8000"
     networks:

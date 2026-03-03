@@ -15,6 +15,20 @@ def get_db_session():
         db.close()
 
 
+async def cleanup_expired_sessions(db: Session) -> int:
+    """
+    清理已过期的会话记录
+
+    返回删除的记录数量，用于日志或调试（生产环境可忽略返回值）。
+    """
+    now = datetime.utcnow()
+    deleted = db.query(SessionModel).filter(
+        SessionModel.expires_at <= now
+    ).delete()
+    db.commit()
+    return deleted
+
+
 async def get_current_online_count(db: Session) -> int:
     """获取当前在线人数"""
     now = datetime.utcnow()
@@ -27,7 +41,7 @@ async def get_current_online_count(db: Session) -> int:
 async def create_session(db: Session, user_id: int, token: str, ip: str = None, user_agent: str = None) -> bool:
     """创建Session"""
     expires_at = datetime.utcnow() + timedelta(seconds=settings.SESSION_EXPIRE_SECONDS)
-    
+
     session = SessionModel(
         user_id=user_id,
         token=token,
@@ -71,12 +85,12 @@ async def refresh_session(db: Session, user_id: int) -> bool:
 async def check_can_login(db: Session, user_id: int) -> bool:
     """检查是否可以登录（并发控制）"""
     now = datetime.utcnow()
-    
+
     # 检查当前在线数是否已达上限
     current_count = db.query(SessionModel).filter(
         SessionModel.expires_at > now
     ).count()
-    
+
     if current_count >= settings.MAX_CONCURRENT_USERS:
         # 检查用户是否已在在线列表中（允许重复登录）
         existing = db.query(SessionModel).filter(
@@ -85,14 +99,14 @@ async def check_can_login(db: Session, user_id: int) -> bool:
                 SessionModel.expires_at > now
             )
         ).first()
-        
+
         if not existing:
             return False
-    
+
     return True
 
 
-async def get_session(db: Session, user_id: int) -> dict or None:
+async def get_session(db: Session, user_id: int) -> dict | None:
     """获取Session"""
     now = datetime.utcnow()
     session = db.query(SessionModel).filter(
@@ -101,7 +115,7 @@ async def get_session(db: Session, user_id: int) -> dict or None:
             SessionModel.expires_at > now
         )
     ).first()
-    
+
     if session:
         return {
             "token": session.token,
