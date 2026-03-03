@@ -23,6 +23,7 @@
 为了实现广播剧专辑资源的统一管理及受控分发，本项目旨在构建一个轻量级的 Web 系统。管理员可便捷地上传音频资源，授权用户（普通用户）仅可在线收听，严禁下载，且系统需严格控制同时在线人数上限，以保证带宽成本和版权保护。
 
 ### 核心目标
+
 - 🎵 统一的音频资源管理平台
 - 👥 基于角色的访问控制（管理员/普通用户）
 - 🔒 防盗链和防下载机制
@@ -34,11 +35,13 @@
 ## 功能特性
 
 ### 管理员功能
+
 - 📚 **专辑管理**
   - 创建、编辑、删除专辑
   - 专辑搜索（标题/描述）
   - 封面图上传
   - 专辑描述管理
+
 - 🎧 **音频管理**
   - 批量上传音频文件
   - 支持MP3/FLAC/OGG等格式
@@ -46,18 +49,22 @@
   - 剧集排序
   - 删除剧集
   - 剧集搜索
+
 - 👥 **用户管理**
   - 查看在线用户状态
   - 控制并发人数
 
 ### 普通用户功能
+
 - 🔐 **用户认证**
   - 登录/注销
   - Token 自动刷新
+
 - 📚 **音频浏览**
   - 浏览所有公开专辑
   - 查看专辑详情
   - 查看剧集列表
+
 - 🎧 **在线播放**
   - 流式播放音频
   - 播放/暂停控制
@@ -67,12 +74,25 @@
   - 进度自动保存
 
 ### 系统特性
-- 📱 **响应式设计** - 完美适配移动端和桌面端
-- 🔒 **安全防护** - 流媒体令牌验证，防止盗链
-- 🎨 **绿色主题** - 保护视力的清新UI设计
-- 🏗️ **部署简单** - Docker Compose一键部署
-- ⚡ **高性能** - Nuxt 3 SSR优化，FastAPI异步处理
-- 🎛️ **进程管理** - PM2自动重启，稳定运行
+
+- 📱 **响应式设计**
+  - 完美适配移动端和桌面端
+
+- 🔒 **安全防护**
+  - 流媒体令牌验证，防止盗链
+
+- 🎨 **绿色主题**
+  - 保护视力的清新UI设计
+
+- 🏗️ **部署简单**
+  - Docker Compose一键部署
+  - 无需额外依赖（SQLite 作为唯一数据存储）
+
+- ⚡ **高性能**
+  - Nuxt 3 SSR优化，FastAPI异步处理
+
+- 🎛️ **进程管理**
+  - PM2自动重启，稳定运行
 
 ---
 
@@ -89,13 +109,14 @@
 ## 技术栈
 
 ### 后端
+
 - **FastAPI** - 高性能异步框架
-- **SQLite** - 轻量级数据库
-- **Redis** - 会话管理和在线人数统计
+- **SQLite** - 轻量级数据库（同时用于数据存储和会话管理）
 - **Docker** - 容器化部署
 - **Python 3.10+** - 开发语言
 
 ### 前端
+
 - **Nuxt 3** - Vue 3 元框架
 - **Vue 3** - 渐进式框架
 - **TypeScript** - 类型安全
@@ -106,6 +127,7 @@
 - **Node.js 22+** - 运行环境
 
 ### 反向代理
+
 - **Caddy** - 自动SSL证书管理（生产环境）
 
 ---
@@ -140,7 +162,7 @@ npm run dev
 ```bash
 cd backend
 pip install -r requirements.txt
- python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 # 在线人数限制和会话管理正常工作
 ```
 
@@ -179,38 +201,41 @@ pm2 logs audio-drama-nuxt
 
 ```
 audio-drama-system/
-├── backend/              # FastAPI 后端
+├── backend/                 # FastAPI 后端
 │   ├── app/
-│   │   ├── api/         # API 路由
-│   │   │   ├── auth.py  # 认证接口
-│   │   │   ├── albums.py # 专辑管理
-│   │   │   ├── episodes.py # 剧集管理
-│   │   │   └── stream.py # 音频流接口
-│   │   ├── core/        # 核心配置
-│   │   ├── db/          # 数据库
-│   │   ├── models/      # 数据模型
-│   │   └── main.py      # 应用入口
+│   │   ├── api/             # API 路由
+│   │   │   ├── auth.py      # 认证接口
+│   │   │   ├── albums.py    # 专辑管理
+│   │   │   ├── episodes.py  # 剧集管理
+│   │   │   └── stream.py    # 音频流接口
+│   │   ├── core/            # 核心配置
+│   │   │   ├── config.py    # 配置文件
+│   │   │   ├── security.py  # 安全模块
+│   │   │   └── session_crud.py # 会话管理
+│   │   ├── db/              # 数据库
+│   │   ├── models/          # 数据模型
+│   │   └── main.py          # 应用入口
 │   ├── requirements.txt
 │   └── Dockerfile
-├── nuxt-frontend/       # Nuxt 3 前端
-│   ├── pages/           # 页面路由
-│   │   ├── login.vue    # 登录页
-│   │   ├── index.vue    # 专辑列表
+├── nuxt-frontend/           # Nuxt 3 前端
+│   ├── pages/               # 页面路由
+│   │   ├── login.vue        # 登录页
+│   │   ├── index.vue        # 专辑列表
 │   │   ├── albums/
-│   │   │   └── [id].vue # 专辑详情
+│   │   │   └── [id].vue     # 专辑详情
 │   │   └── player/
-│   │       └── [id].vue # 播放器
-│   ├── plugins/         # Nuxt 插件
-│   │   └── api.ts       # Axios API 封装
-│   ├── api/             # API 模块
+│   │       └── [id].vue     # 播放器
+│   ├── plugins/             # Nuxt 插件
+│   │   └── api.ts           # Axios API 封装
+│   ├── api/                 # API 模块
 │   │   ├── auth.ts
 │   │   ├── album.ts
 │   │   └── episode.ts
-│   ├── stores/          # Pinia 状态管理
-│   ├── nuxt.config.ts   # Nuxt 配置
+│   ├── stores/              # Pinia 状态管理
+│   ├── nuxt.config.ts       # Nuxt 配置
 │   └── package.json
-├── ecosystem-nuxt.config.js  # PM2 配置
-├── start-nuxt.sh        # Nuxt 启动脚本
+├── ecosystem-nuxt.config.js # PM2 配置
+├── start-nuxt.sh            # Nuxt 启动脚本
 ├── docker-compose.yml
 └── README.md
 ```
@@ -223,10 +248,10 @@ pip install -r requirements.txt
 ```
 
 主要依赖：
+
 - fastapi - Web 框架
 - uvicorn - ASGI 服务器
 - sqlalchemy - ORM
-- redis - Redis 客户端
 - python-jose - JWT 处理
 - mutagen - 音频元数据解析
 - passlib - 密码哈希
@@ -239,6 +264,7 @@ npm install
 ```
 
 主要依赖：
+
 - nuxt - Nuxt 3 框架
 - vue - Vue 3
 - pinia - 状态管理
@@ -252,12 +278,14 @@ npm install
 详细 API 文档：http://localhost:8000/docs
 
 ### 认证接口
+
 - `POST /api/auth/login` - 用户登录（含并发控制）
-- `POST /api/auth/logout` - 用户退出（清除 Redis Session）
-- `POST /api/auth/heartbeat` - 心跳保活（刷新 Session TTL）
+- `POST /api/auth/logout` - 用户退出（清除会话）
+- `POST /api/auth/heartbeat` - 心跳保活（刷新会话过期时间）
 - `GET /api/auth/me` - 获取当前用户信息
 
 ### 专辑管理（管理员）
+
 - `GET /api/admin/albums` - 获取专辑列表
 - `POST /api/admin/albums` - 创建专辑
 - `GET /api/admin/albums/{id}` - 获取专辑详情
@@ -265,6 +293,7 @@ npm install
 - `DELETE /api/admin/albums/{id}` - 删除专辑
 
 ### 剧集管理（管理员）
+
 - `GET /api/admin/albums/{id}/episodes` - 获取剧集列表
 - `POST /api/admin/albums/{id}/episodes` - 创建剧集
 - `GET /api/admin/episodes/{id}` - 获取剧集详情
@@ -274,6 +303,7 @@ npm install
 - `POST /api/admin/albums/{id}/episodes/batch-upload` - 批量上传音频
 
 ### 音频流（用户）
+
 - `GET /api/stream/token/{episode_id}` - 获取流媒体令牌（10分钟有效期）
 - `GET /api/stream/{episode_id}` - 音频流播放（需要令牌认证）
 
@@ -294,24 +324,25 @@ docker-compose up -d
 ```yaml
 environment:
   - DATABASE_URL=sqlite:///./data/audio_drama.db
-  - REDIS_URL=redis://redis:6379/0
   - SECRET_KEY=your-secret-key
   - JWT_SECRET_KEY=your-jwt-secret
   - MAX_CONCURRENT_USERS=10
   - SESSION_EXPIRE_SECONDS=1800
-  - UPLOAD_MAX_FILE_SIZE=104857600  # 100MB
+  - UPLOAD_MAX_FILE_SIZE=104857600 # 100MB
   - DEFAULT_ADMIN_PASSWORD=123456
 ```
 
 ### 使用 Caddy 自动 SSL
 
 1. 复制 Caddy 配置:
+
 ```bash
 sudo cp Caddyfile /etc/caddy/Caddyfile
 sudo systemctl restart caddy
 ```
 
 2. 域名配置示例:
+
 ```
 q.1006868.xyz {
     reverse_proxy localhost:5173
@@ -345,22 +376,21 @@ pm2 startup systemd
 
 ### 1. 并发控制（10人限制）
 
-利用 Redis 的 `keys` 操作和 `setex` (Set with Expiry) 功能实现：
+利用 SQLite 数据库的 `sessions` 表实现会话管理和并发控制：
 
-**存储键设计**：
-- Key: `session:{user_id}`
-- Value: `token`
-- TTL: 1800s (30分钟)
+**存储结构**：
+- 表: `sessions`
+- 字段: `id`, `user_id`, `token`, `ip_address`, `user_agent`, `expires_at`
 
 **登录校验流程**：
 1. 请求到达 `/api/auth/login`
-2. 查询 Redis `keys session:*` 获取当前所有在线 Key
+2. 查询 `sessions` 表中 `expires_at > 当前时间` 的记录数
 3. 若用户不在线且总数 >= 10，返回 HTTP 403
-4. 否则，校验密码通过后，执行 `redis_client.setex(...)`
+4. 否则，校验密码通过后，创建新的 session 记录
 
 **心跳保活**：
 - 前端每隔 15 分钟请求一次 `/api/auth/heartbeat`
-- 后端执行 `redis_client.expire(session_key, 1800)` 刷新过期时间
+- 后端更新 session 的 `expires_at` 字段，延长过期时间
 
 ### 2. 防下载音频流方案
 
@@ -388,6 +418,7 @@ pm2 startup systemd
 ### 3. 数据库设计
 
 #### 数据表结构
+
 - **user (用户表)**
   - `id` (PK, Int): 自增ID
   - `username` (Varchar): 登录账号
@@ -434,16 +465,19 @@ pm2 startup systemd
 
 2. **存储建议**
    - 将 `/media` 目录挂载到持久化存储
-   - 定期清理过期的会话和临时文件
+   - 定期清理过期的会话记录
 
 3. **备份策略**
-   - 定期备份 SQLite 数据库
+   - 定期备份 SQLite 数据库文件
    - 备份音频文件目录
-   - 备份 Redis 数据（如需要）
 
 ---
 
 ## 更新日志
+
+### v2.1.0 (2026-03-03)
+- ✅ **移除 Redis 依赖** - 使用 SQLite 统一管理数据和会话
+- ✅ **简化部署** - 无需额外依赖，降低运维复杂度
 
 ### v2.0.0 (2026-03-01)
 - ✅ **前端迁移至 Nuxt 3** - 从 Vite 迁移到 Nuxt 3 框架
@@ -472,8 +506,8 @@ MIT License
 
 ## 作者
 
-**琪琪 (Duoduo)** - 音频爱好者 & 极客程序员
-
+**琪琪 (Duoduo)**
+- 音频爱好者 & 极客程序员
 - GitHub: [@amyflash](https://github.com/amyflash)
 - 项目: [极简广播剧系统](https://github.com/amyflash/audio-drama-system)
 

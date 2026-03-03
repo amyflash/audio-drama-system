@@ -1,16 +1,12 @@
 from pydantic_settings import BaseSettings
 from typing import Optional
 
-
 class Settings(BaseSettings):
     # 域名配置
     DOMAIN: str = "localhost"
 
     # 数据库
     DATABASE_URL: str = "sqlite:///./data/audio_drama.db"
-
-    # Redis
-    REDIS_URL: str = "redis://localhost:6379/0"
 
     # 密钥
     SECRET_KEY: str = "your-secret-key-change-in-production"
@@ -28,6 +24,5 @@ class Settings(BaseSettings):
 
     # 默认管理员密码
     DEFAULT_ADMIN_PASSWORD: str = "123456"
-
 
 settings = Settings()

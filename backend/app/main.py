@@ -18,10 +18,10 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-    "https://q.1006868.xyz",  # 线上
-    "http://localhost:5173",  # 本地前端
-    "http://127.0.0.1:5173",  # 如果你有用这个域名，也可以加上
-],
+        "https://q.1006868.xyz",  # 线上
+        "http://localhost:5173",  # 本地前端
+        "http://127.0.0.1:5173",  # 如果你有用这个域名，也可以加上
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -35,7 +35,6 @@ app.include_router(upload.router, prefix="/api/admin")
 app.include_router(stream.router, prefix="/api")
 app.include_router(users.router, prefix="/api/admin")
 
-
 # 健康检查
 @app.get("/health")
 async def health_check():
@@ -46,13 +45,16 @@ async def health_check():
         "version": "1.0.0"
     }
 
-
 # 在线人数查询
 @app.get("/api/online")
 async def get_online_count():
     """获取当前在线人数"""
-    from app.core.redis_client import get_current_online_count
-    count = await get_current_online_count()
+    from app.core.session_crud import get_current_online_count
+    db = next(get_db())
+    try:
+        count = await get_current_online_count(db)
+    finally:
+        db.close()
     return {
         "success": True,
         "data": {
@@ -61,21 +63,19 @@ async def get_online_count():
         }
     }
 
-
 # 系统状态
 @app.get("/api/system/status")
 async def system_status():
     """系统状态"""
-    from app.core.redis_client import get_current_online_count
+    from app.core.session_crud import get_current_online_count
     from sqlalchemy import func
     from app.models.models import Album, Episode
     import os
 
-    online_count = await get_current_online_count()
-
-    # 统计专辑和剧集数量
     db = next(get_db())
     try:
+        online_count = await get_current_online_count(db)
+        # 统计专辑和剧集数量
         total_albums = db.query(func.count(Album.id)).scalar()
         total_episodes = db.query(func.count(Episode.id)).scalar()
     finally:
@@ -104,7 +104,6 @@ async def system_status():
         }
     }
 
-
 # 全局异常处理
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request, exc):
@@ -114,35 +113,29 @@ async def http_exception_handler(request, exc):
         content={"success": False, "error": exc.detail}
     )
 
-
 @app.exception_handler(Exception)
 async def general_exception_handler(request, exc):
     """通用异常处理"""
     import traceback
     error_detail = traceback.format_exc()
     print(f"未捕获的异常: {error_detail}")
-
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"success": False, "error": "内部服务器错误"}
     )
-
 
 # 启动事件
 @app.on_event("startup")
 async def startup_event():
     """应用启动时的初始化"""
     print("🚀 正在初始化应用...")
-
     # 初始化数据库
     try:
         init_db()
     except Exception as e:
         print(f"❌ 数据库初始化失败: {e}")
         raise
-
     print("✅ 应用初始化完成")
-
 
 if __name__ == "__main__":
     import uvicorn

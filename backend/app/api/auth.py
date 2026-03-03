@@ -1,17 +1,18 @@
-from fastapi import APIRouter, Depends, status, Request
+from fastapi import APIRouter, Depends, status, Request, HTTPException
 from sqlalchemy.orm import Session
 from app.db.base import get_db
 from app.models.models import User
 from app.models.schemas import LoginRequest, LoginResponse, SuccessResponse
 from app.core.security import verify_password, create_access_token
-from app.core.redis_client import (
-    create_session, delete_session, refresh_session,
+from app.core.session_crud import (
+    create_session,
+    delete_session,
+    refresh_session,
     check_can_login
 )
 from app.api.deps import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["鉴权"])
-
 
 @router.post("/login", response_model=LoginResponse)
 async def login(
@@ -36,7 +37,7 @@ async def login(
         )
 
     # 3. 并发控制检查
-    can_login = await check_can_login(user.id)
+    can_login = await check_can_login(db, user.id)
     if not can_login:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -51,7 +52,7 @@ async def login(
     # 5. 创建Session
     ip_address = request.client.host
     user_agent = request.headers.get("user-agent", "")
-    await create_session(user.id, access_token, ip_address, user_agent)
+    await create_session(db, user.id, access_token, ip_address, user_agent)
 
     # 6. 更新最后登录时间
     from datetime import datetime
@@ -59,7 +60,6 @@ async def login(
     db.commit()
 
     from app.core.config import settings
-
     return LoginResponse(
         access_token=access_token,
         token_type="bearer",
@@ -67,18 +67,22 @@ async def login(
         user=user
     )
 
-
 @router.post("/logout", response_model=SuccessResponse)
-async def logout(current_user: User = Depends(get_current_user)):
+async def logout(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """登出接口"""
-    await delete_session(current_user.id)
+    await delete_session(db, current_user.id)
     return SuccessResponse(success=True, data="已成功登出")
 
-
 @router.post("/heartbeat", response_model=SuccessResponse)
-async def heartbeat(current_user: User = Depends(get_current_user)):
+async def heartbeat(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """心跳保活接口"""
-    await refresh_session(current_user.id)
+    await refresh_session(db, current_user.id)
     from app.core.config import settings
     return SuccessResponse(
         success=True,
