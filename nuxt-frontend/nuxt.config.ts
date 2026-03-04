@@ -33,6 +33,18 @@ export default defineNuxtConfig({
   },
 nitro: {
              devProxy: {
+'/openapi.json': {
+        target: 'http://audio-drama-backend:8000', // 后端服务地址（容器名+端口）
+        changeOrigin: true,
+        prependPath: true
+      },
+      // 顺带把 /docs 也代理（如果需要）
+      '/docs': {
+        target: 'http://audio-drama-backend:8000',
+        changeOrigin: true,
+        prependPath: true
+      }
+    },
                 '/api': {
                   target: process.env.API_BASE_URL || 'http://backend:8000',
                   changeOrigin: true
@@ -41,7 +53,9 @@ nitro: {
              routeRules: {
               '/api/**': {
                 proxy: process.env.API_BASE_URL || 'http://backend:8000/**'
-              }
+              },'/openapi.json': {
+        proxy: 'http://audio-drama-backend:8000/openapi.json'
+      }
             }
           }
 })
