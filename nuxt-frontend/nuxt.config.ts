@@ -1,19 +1,24 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  // 开发工具配置
   devtools: { enabled: true },
 
+  // 开发服务器配置
   devServer: {
     port: 5173,
     host: '0.0.0.0'
   },
 
+  // 启用的 Nuxt 模块
   modules: [
     '@pinia/nuxt',
     '@nuxtjs/tailwindcss'
   ],
 
+  // 全局引入的 CSS 文件
   css: ['~/assets/css/main.css'],
 
+  // 应用级配置（页面头部信息）
   app: {
     head: {
       title: '极简广播剧系统',
@@ -25,37 +30,51 @@ export default defineNuxtConfig({
     }
   },
 
+  // 运行时配置（环境变量）
   runtimeConfig: {
     public: {
-      // 调整优先级：优先读取 Docker 容器环境变量 API_BASE_URL，其次是原有的 NUXT_PUBLIC_API_BASE_URL，最后兜底
+      // 优先级：Docker 环境变量 > Nuxt 环境变量 > 本地默认地址
       apiBaseUrl: process.env.API_BASE_URL || process.env.NUXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000'
     }
   },
-nitro: {
-             devProxy: {
-'/openapi.json': {
-        target: 'http://audio-drama-backend:8000', // 后端服务地址（容器名+端口）
+
+  // Nitro 服务器配置（代理、路由规则）
+  nitro: {
+    // 开发环境代理（仅开发模式生效）
+    devProxy: {
+      // 代理 OpenAPI 文档请求
+      '/openapi.json': {
+        target: process.env.API_BASE_URL || 'http://backend:8000',
         changeOrigin: true,
         prependPath: true
       },
-      // 顺带把 /docs 也代理（如果需要）
+      // 代理 Swagger 文档页面
       '/docs': {
-        target: 'http://audio-drama-backend:8000',
+        target: process.env.API_BASE_URL || 'http://backend:8000',
+        changeOrigin: true,
+        prependPath: true
+      },
+      // 代理所有 API 请求
+      '/api': {
+        target: process.env.API_BASE_URL || 'http://backend:8000',
         changeOrigin: true,
         prependPath: true
       }
     },
-                '/api': {
-                  target: process.env.API_BASE_URL || 'http://backend:8000',
-                  changeOrigin: true
-                }
-              },
-             routeRules: {
-              '/api/**': {
-                proxy: process.env.API_BASE_URL || 'http://backend:8000/**'
-              },'/openapi.json': {
-        proxy: 'http://audio-drama-backend:8000/openapi.json'
+    // 通用路由规则（开发/生产环境均生效）
+    routeRules: {
+      // API 接口代理规则
+      '/api/**': {
+        proxy: `${process.env.API_BASE_URL || 'http://backend:8000'}/**`
+      },
+      // OpenAPI 文档代理规则
+      '/openapi.json': {
+        proxy: `${process.env.API_BASE_URL || 'http://backend:8000'}/openapi.json`
+      },
+      // 文档页面代理规则
+      '/docs/**': {
+        proxy: `${process.env.API_BASE_URL || 'http://backend:8000'}/docs/**`
       }
-            }
-          }
+    }
+  }
 })
