@@ -44,28 +44,25 @@ export default defineNuxtConfig({
     devProxy: {
       // 代理 OpenAPI 文档请求
       '/openapi.json': {
-        target: process.env.API_BASE_URL || 'http://backend:8000',
-        changeOrigin: true,
-        prependPath: true
+        target: `${process.env.API_BASE_URL || 'http://backend:8000'}/openapi.json`,
+        changeOrigin: true
       },
       // 代理 Swagger 文档页面
       '/docs': {
-        target: process.env.API_BASE_URL || 'http://backend:8000',
-        changeOrigin: true,
-        prependPath: true
+        target: `${process.env.API_BASE_URL || 'http://backend:8000'}/docs`,
+        changeOrigin: true
       },
-      // 代理所有 API 请求
-      '/api': {
-        target: process.env.API_BASE_URL || 'http://backend:8000',
-        changeOrigin: true,
-        prependPath: true
+      // 代理所有 API 请求 - 目标URL包含/api
+      '/api/**': {
+        target: `${process.env.API_BASE_URL || 'http://backend:8000'}/api`,
+        changeOrigin: true
       }
     },
     // 通用路由规则（开发/生产环境均生效）
     routeRules: {
-      // API 接口代理规则
+      // API 接口代理规则 - 目标URL包含/api，确保路径正确
       '/api/**': {
-        proxy: `${process.env.API_BASE_URL || 'http://backend:8000'}/**`
+        proxy: `${process.env.API_BASE_URL || 'http://backend:8000'}/api`
       },
       // OpenAPI 文档代理规则
       '/openapi.json': {
