@@ -27,7 +27,8 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'https://h.1006868.xyz'
+      // 调整优先级：优先读取 Docker 容器环境变量 API_BASE_URL，其次是原有的 NUXT_PUBLIC_API_BASE_URL，最后兜底
+      apiBaseUrl: process.env.API_BASE_URL || process.env.NUXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000'
     }
   }
 })
