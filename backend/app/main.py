@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -15,14 +16,18 @@ app = FastAPI(
 )
 
 # CORS中间件
+# 从环境变量读取允许的域名，支持多个域名用逗号分隔
+allow_origins_str = os.getenv("ALLOW_ORIGINS", "")
+if allow_origins_str:
+    # 按逗号分隔，去除空格
+    allow_origins = [origin.strip() for origin in allow_origins_str.split(",")]
+else:
+    # 默认允许所有来源（便于快速部署，生产环境建议指定域名）
+    allow_origins = ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://q.1006868.xyz",  # 线上
-	"https://gbj.516768.xyz",  # 线上
-        "http://localhost:5173",  # 本地前端
-        "http://127.0.0.1:5173",  # 如果你有用这个域名，也可以加上
-    ],
+    allow_origins=allow_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
