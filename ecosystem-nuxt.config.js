@@ -9,7 +9,8 @@ module.exports = {
     max_memory_restart: '1G',
     env: {
       NODE_ENV: 'development',
-      PORT: '5173'
+      PORT: '5173',
+      API_BASE_URL: 'http://127.0.0.1:8000'
     },
     error_file: '/tmp/pm2-nuxt-error.log',
     out_file: '/tmp/pm2-nuxt-out.log',

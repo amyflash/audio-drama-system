@@ -44,17 +44,17 @@ export default defineNuxtConfig({
     devProxy: {
       // 代理 OpenAPI 文档请求
       '/openapi.json': {
-        target: `${process.env.API_BASE_URL || 'http://backend:8000'}/openapi.json`,
+        target: `${process.env.API_BASE_URL || 'http://127.0.0.1:8000'}/openapi.json`,
         changeOrigin: true
       },
       // 代理 Swagger 文档页面
       '/docs': {
-        target: `${process.env.API_BASE_URL || 'http://backend:8000'}/docs`,
+        target: `${process.env.API_BASE_URL || 'http://127.0.0.1:8000'}/docs`,
         changeOrigin: true
       },
       // 代理所有 API 请求 - 目标URL包含/api
       '/api/**': {
-        target: `${process.env.API_BASE_URL || 'http://backend:8000'}/api`,
+        target: `${process.env.API_BASE_URL || 'http://127.0.0.1:8000'}/api`,
         changeOrigin: true
       }
     },
@@ -62,15 +62,15 @@ export default defineNuxtConfig({
     routeRules: {
       // API 接口代理规则 - 目标URL包含/api，确保路径正确
       '/api/**': {
-        proxy: `${process.env.API_BASE_URL || 'http://backend:8000'}/api`
+        proxy: `${process.env.API_BASE_URL || 'http://127.0.0.1:8000'}/api`
       },
       // OpenAPI 文档代理规则
       '/openapi.json': {
-        proxy: `${process.env.API_BASE_URL || 'http://backend:8000'}/openapi.json`
+        proxy: `${process.env.API_BASE_URL || 'http://127.0.0.1:8000'}/openapi.json`
       },
       // 文档页面代理规则
       '/docs/**': {
-        proxy: `${process.env.API_BASE_URL || 'http://backend:8000'}/docs/**`
+        proxy: `${process.env.API_BASE_URL || 'http://127.0.0.1:8000'}/docs/**`
       }
     }
   }
