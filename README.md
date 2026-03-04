@@ -155,6 +155,14 @@ cd nuxt-frontend
 npm install
 npm run dev
 # 访问 http://localhost:5173
+重新构建并部署：
+
+     1    # 构建前端镜像
+     2    cd nuxt-frontend
+     3    docker build -t audio-drama-system_nuxt-frontend:latest .
+     4
+     5    # 启动所有服务
+     6    docker-compose up -d
 ```
 
 ### 后端开发模式
