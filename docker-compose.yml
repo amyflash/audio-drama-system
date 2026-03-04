@@ -25,6 +25,7 @@ services:  # 必须包含 services 根节点
       - backend  # 仅声明依赖关系，不等待健康检查
     environment:
       - API_BASE_URL=http://backend:8000  # 容器内通过服务名访问后端，无需用 localhost
+      - ALLOW_ORIGINS=https://gbj.516768.xyz,https://q.1006868.xyz
     ports:
       - "5173:80"
     networks:
