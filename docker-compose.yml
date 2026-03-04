@@ -1,11 +1,15 @@
 services:  # 必须包含 services 根节点
   backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     image: audio-drama-system_backend:latest
     container_name: audio-drama-backend
     restart: unless-stopped
     environment:
       - DATABASE_URL=sqlite:///./data/audio_drama.db
       - SECRET_KEY=your-secret-key-change-in-production
+      - ALLOW_ORIGINS=*
       # 其他环境变量
     volumes:
       - /home/gbj/sqlite_data:/data
@@ -13,11 +17,14 @@ services:  # 必须包含 services 根节点
       - /home/gbj/media_data:/media/albums
       - /home/gbj/backup_data:/app/backup
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     networks:
       - audio-drama-net
 
   nuxt-frontend:
+    build:
+      context: ./nuxt-frontend
+      dockerfile: Dockerfile
     image: audio-drama-system_nuxt-frontend:latest
     container_name: audio-drama-nuxt
     restart: unless-stopped
