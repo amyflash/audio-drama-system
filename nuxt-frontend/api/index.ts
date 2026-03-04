@@ -13,7 +13,7 @@ const getBaseUrl = () => {
   return dockerEnvUrl || nuxtPublicUrl || fallbackUrl;
 };
 
-const baseURL = getBaseUrl();
+const baseURL ="/api";
 
 const api = axios.create({
   baseURL,

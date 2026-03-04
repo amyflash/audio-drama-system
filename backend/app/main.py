@@ -19,6 +19,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://q.1006868.xyz",  # 线上
+	"https://gbj.516768.xyz",  # 线上
         "http://localhost:5173",  # 本地前端
         "http://127.0.0.1:5173",  # 如果你有用这个域名，也可以加上
     ],
