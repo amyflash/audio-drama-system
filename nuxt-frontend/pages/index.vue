@@ -17,7 +17,11 @@
       {{ toast.message }}
     </div>
 
-    <!-- 移动端优化的用户头部 -->
+    <!-- 加载中状态 -->
+<div v-if="!user" style="background-color: white; padding: 16px; text-align: center; color: #6b7280;">
+  加载中...
+</div>
+<!-- 移动端优化的用户头部 -->
     <div style="background-color: white; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); border-bottom: 1px solid #e5e7eb; padding: 12px 16px; position: sticky; top: 0; z-index: 50;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <div style="display: flex; align-items: center; gap: 8px 12px;">
@@ -442,9 +446,10 @@ const user = computed(() => {
 })
 
 const getUserDisplayName = () => {
+  if (!user.value) return '加载中...'
   return user.value?.first_name && user.value?.last_name
     ? `${user.value.first_name} ${user.value.last_name}`
-    : user.value?.username || '未知用户'
+    : user.value?.username || '加载中...'
 }
 
 const isAdmin = () => {

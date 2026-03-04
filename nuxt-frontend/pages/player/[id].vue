@@ -3,7 +3,7 @@
     <!-- 移动端顶部导航 -->
     <div class="bg-green-900/60 backdrop-blur-md shadow-lg border-b border-green-800/50 px-4 py-3 sticky top-0 z-50 flex items-center gap-3">
       <button
-        @click="navigateTo('/')"
+        @click="navigateTo(`/albums/${episode.album_id}`)"
         class="text-green-300 hover:text-green-200 px-2 py-1 text-sm font-medium transition-colors"
       >
         ← 返回
