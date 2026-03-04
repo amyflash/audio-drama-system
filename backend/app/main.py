@@ -42,7 +42,7 @@ app.include_router(stream.router, prefix="/api")
 app.include_router(users.router, prefix="/api/admin")
 
 # 健康检查
-@app.get("/health")
+@app.get("/api/health")
 async def health_check():
     """健康检查接口"""
     return {
