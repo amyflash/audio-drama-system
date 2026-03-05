@@ -141,10 +141,12 @@
 - Python 3.10+ (后端开发)
 
 ### 一键部署
-
+路径权限：宿主机的 /home/gbj/sqlite_data、/home/gbj/db_data 等目录需要提前创建，且确保 Docker 有读写权限（可执行 mkdir -p /home/gbj/{sqlite_data,db_data,media_data,backup_data} 创建）；
+SECRET_KEY：your-secret-key-change-in-production 是占位符，生产环境必须替换成随机的安全密钥（比如用 openssl rand -hex 32 生成）；
 ```bash
 git clone https://github.com/amyflash/audio-drama-system.git
 cd audio-drama-system
+mkdir -p /home/gbj/{sqlite_data,db_data,media_data,backup_data}
 docker-compose up -d
 ```
 
@@ -173,6 +175,7 @@ pip install -r requirements.txt
 python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 # 在线人数限制和会话管理正常工作
 ```
+
 
 ### PM2 管理（生产环境）
 
