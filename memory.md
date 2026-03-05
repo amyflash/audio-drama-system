@@ -150,3 +150,13 @@ MAX_CONCURRENT_USERS=20 UPLOAD_MAX_FILE_SIZE=209715200 docker-compose up -d
 2. 生产环境务必修改 `SECRET_KEY` 和 `JWT_SECRET_KEY`
 3. 上传文件大小限制以字节为单位，计算方式：`1MB = 1048576 字节`
 4. 同时在线人数限制基于会话管理，超限时新用户无法登录
+
+### nginx端也要修改允许的上传文件大小
+server {
+    listen 443 ssl ; 
+    server_name gbj.516768.xyz; 
+    # 新增：设置整个域名允许的最大上传文件大小为200M
+    client_max_body_size 200M;
+    
+    index index.php index.html index.htm default.php default.htm default.html;
+~~~
