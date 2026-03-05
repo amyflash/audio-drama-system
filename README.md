@@ -347,10 +347,12 @@ docker-compose up -d
    docker-compose up -d --build
    ```
 
-3. **验证部署**
-   - 访问前端：http://your-server:8000
-   - 访问API文档：http://your-server:8000/docs
-   - 健康检查：http://your-server:8000/api/health
+3. **本地验证部署**
+   - 访问前端：http://127.0.0.1:8000
+   - 访问API文档：http://127.0.0.1:8000/docs
+   - 健康检查：http://127.0.0.1:8000/api/health
+
+注意：远程服务器访问，需要代理到8000端口
 
 **优势：**
 - 简化架构：只有一个容器需要管理
