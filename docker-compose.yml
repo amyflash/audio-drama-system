@@ -1,15 +1,15 @@
 services:  # 必须包含 services 根节点
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
-    image: audio-drama-system_backend:latest
-    container_name: audio-drama-backend
+      context: .  # 使用项目根目录作为构建上下文
+      dockerfile: Dockerfile.combined
+    image: audio-drama-system_combined:latest
+    container_name: audio-drama-combined
     restart: unless-stopped
     environment:
       - DATABASE_URL=sqlite:///./data/audio_drama.db
       - SECRET_KEY=your-secret-key-change-in-production
-      - ALLOW_ORIGINS=*
+      - ALLOW_ORIGINS=*  # 由于前端和后端同源，可以设置为*或具体域名
       # 其他环境变量
     volumes:
       - /home/gbj/sqlite_data:/data
@@ -18,23 +18,6 @@ services:  # 必须包含 services 根节点
       - /home/gbj/backup_data:/app/backup
     ports:
       - "127.0.0.1:8000:8000"
-    networks:
-      - audio-drama-net
-
-  nuxt-frontend:
-    build:
-      context: ./nuxt-frontend
-      dockerfile: Dockerfile
-    image: audio-drama-system_nuxt-frontend:latest
-    container_name: audio-drama-nuxt
-    restart: unless-stopped
-    depends_on:
-      - backend  # 仅声明依赖关系，不等待健康检查
-    environment:
-      - API_BASE_URL=http://backend:8000  # 容器内通过服务名访问后端，无需用 localhost
-      - ALLOW_ORIGINS=https://gbj.516768.xyz,https://q.1006868.xyz
-    ports:
-      - "5173:80"
     networks:
       - audio-drama-net
 

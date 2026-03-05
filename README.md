@@ -225,7 +225,7 @@ audio-drama-system/
 │   │   │   └── session_crud.py # 会话管理
 │   │   ├── db/              # 数据库
 │   │   ├── models/          # 数据模型
-│   │   └── main.py          # 应用入口
+│   │   └── main.py          # 应用入口（已添加静态文件服务）
 │   ├── requirements.txt
 │   └── Dockerfile
 ├── nuxt-frontend/           # Nuxt 3 前端
@@ -239,15 +239,13 @@ audio-drama-system/
 │   ├── plugins/             # Nuxt 插件
 │   │   └── api.ts           # Axios API 封装
 │   ├── api/                 # API 模块
-│   │   ├── auth.ts
-│   │   ├── album.ts
-│   │   └── episode.ts
 │   ├── stores/              # Pinia 状态管理
-│   ├── nuxt.config.ts       # Nuxt 配置
+│   ├── nuxt.config.ts       # Nuxt 配置（已配置为静态生成）
 │   └── package.json
-├── ecosystem-nuxt.config.js # PM2 配置
-├── start-nuxt.sh            # Nuxt 启动脚本
-├── docker-compose.yml
+├── Dockerfile.combined      # 集成构建 Dockerfile（前后端整合）
+├── docker-compose.yml       # 容器编排配置（已更新为单服务）
+├── ecosystem-nuxt.config.js # PM2 配置（用于传统部署）
+├── start-nuxt.sh            # Nuxt 启动脚本（用于传统部署）
 └── README.md
 ```
 
@@ -327,6 +325,43 @@ npm install
 ```bash
 docker-compose up -d
 ```
+
+### 单容器部署（前后端整合）
+
+本项目现在支持将前端打包成静态文件，直接挂载到 FastAPI 后端，实现单容器部署。这种方法简化了部署架构，无需单独的前端服务器，也无需处理跨域问题。
+
+**修改说明：**
+- 前端（Nuxt 3）配置为静态生成（SSG）
+- FastAPI 后端添加静态文件服务，支持 SPA 路由
+- 创建了集成构建的 Dockerfile.combined
+- 更新了 docker-compose.yml 使用单服务架构
+
+**部署步骤：**
+
+1. **上传文件到服务器**
+   ```bash
+   # 将修改后的整个项目上传到服务器
+   scp -r audio-drama-system user@your-server:/path/to/
+   ```
+
+2. **构建并启动容器**
+   ```bash
+   cd /path/to/audio-drama-system
+   docker-compose up -d --build
+   ```
+
+3. **本地验证部署**
+   - 访问前端：http://127.0.0.1:8000
+   - 访问API文档：http://127.0.0.1:8000/docs
+   - 健康检查：http://127.0.0.1:8000/api/health
+
+注意：远程服务器访问，需要代理到8000端口
+
+**优势：**
+- 简化架构：只有一个容器需要管理
+- 避免跨域：前后端同源，无需 CORS 配置
+- 统一入口：所有请求通过同一个端口访问
+- 易于维护：日志、监控、备份更简单
 
 ### 环境变量配置
 
@@ -485,6 +520,12 @@ pm2 startup systemd
 ---
 
 ## 更新日志
+
+### v2.2.0 (2026-03-05)
+- ✅ **前后端整合部署** - 前端打包成静态文件挂载到 FastAPI 后端
+- ✅ **单容器架构** - 简化部署，无需单独前端容器
+- ✅ **静态生成优化** - Nuxt 配置为静态 SPA 模式
+- ✅ **路由统一处理** - FastAPI 同时服务 API 和前端页面
 
 ### v2.1.0 (2026-03-03)
 - ✅ **移除 Redis 依赖** - 使用 SQLite 统一管理数据和会话
