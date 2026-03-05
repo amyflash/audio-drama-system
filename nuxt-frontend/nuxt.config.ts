@@ -54,7 +54,7 @@ export default defineNuxtConfig({
       },
       // 代理所有 API 请求 - 目标URL包含/api
       '/api/**': {
-        target: `${process.env.API_BASE_URL || 'http://backend:8000'}/api`,
+        target: `${process.env.API_BASE_URL || 'http://backend:8000'}`,
         changeOrigin: true
       }
     },
@@ -62,7 +62,7 @@ export default defineNuxtConfig({
     routeRules: {
       // API 接口代理规则 - 目标URL包含/api，确保路径正确
       '/api/**': {
-        proxy: `${process.env.API_BASE_URL || 'http://backend:8000'}/api`
+        proxy: `${process.env.API_BASE_URL || 'http://backend:8000'}`
       },
       // OpenAPI 文档代理规则
       '/openapi.json': {
