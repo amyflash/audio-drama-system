@@ -1,5 +1,8 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  // 关闭服务器端渲染，生成静态SPA
+  ssr: false,
+
   // 开发工具配置
   devtools: { enabled: true },
 
@@ -34,7 +37,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       // 优先级：Docker 环境变量 > Nuxt 环境变量 > 本地默认地址
-      apiBaseUrl: process.env.API_BASE_URL || process.env.NUXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000'
+      apiBaseUrl: process.env.API_BASE_URL || process.env.NUXT_PUBLIC_API_BASE_URL || ''
     }
   },
 

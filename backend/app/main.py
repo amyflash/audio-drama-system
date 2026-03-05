@@ -41,6 +41,16 @@ app.include_router(upload.router, prefix="/api/admin")
 app.include_router(stream.router, prefix="/api")
 app.include_router(users.router, prefix="/api/admin")
 
+# 静态文件服务（SPA前端）
+# 注意：此挂载应放在所有API路由之后，以便API路由优先匹配
+import os
+static_dir = os.path.join(os.path.dirname(__file__), "..", "static")
+if os.path.exists(static_dir):
+    app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
+    print(f"✅ 已挂载静态文件目录: {static_dir}")
+else:
+    print(f"⚠️  静态文件目录不存在: {static_dir}，前端将不可用")
+
 # 健康检查
 @app.get("/api/health")
 async def health_check():
