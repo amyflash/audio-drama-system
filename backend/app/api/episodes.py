@@ -10,11 +10,12 @@ from app.db.base import get_db
 from app.models.models import Album, Episode, User
 from app.models.schemas import EpisodeCreate, EpisodeUpdate, EpisodeResponse, UploadResponse
 from app.api.deps import get_current_admin, get_current_user, get_stream_auth_user
+from app.core.config import settings
 
 router = APIRouter(prefix="/episodes", tags=["剧集管理"])
 
 ALLOWED_TYPES = ["audio/mpeg", "audio/mp4", "audio/flac", "audio/x-m4a", "audio/mp3", "audio/x-mp3"]
-MAX_FILE_SIZE = 104857600  # 100MB
+MAX_FILE_SIZE = settings.UPLOAD_MAX_FILE_SIZE  # 100MB
 MEDIA_DIR = "/media/albums"
 
 

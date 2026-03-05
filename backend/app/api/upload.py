@@ -9,6 +9,7 @@ from app.models.schemas import UploadResponse
 from app.api.deps import get_current_admin, get_current_user
 import uuid
 from pathlib import Path
+from app.core.config import settings
 
 router = APIRouter(prefix="/upload", tags=["文件上传"])
 
@@ -16,7 +17,7 @@ router = APIRouter(prefix="/upload", tags=["文件上传"])
 ALLOWED_TYPES = ["audio/mpeg", "audio/mp4", "audio/flac", "audio/x-m4a", "audio/mp3"]
 
 # 最大文件大小（100MB）
-MAX_FILE_SIZE = 104857600
+MAX_FILE_SIZE = settings.UPLOAD_MAX_FILE_SIZE
 
 
 @router.post("/batch", response_model=UploadResponse)

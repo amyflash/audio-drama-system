@@ -77,3 +77,76 @@ curl -X POST http://localhost:5173/api/auth/login -H "Content-Type: application/
 - **问题**：前端访问登录接口时，后台收到 `/auth/login` 返回404
 - **原因**：Nuxt代理默认剥离了 `/api` 前缀
 - **解决方案**：在代理目标URL中显式包含 `/api` 前缀
+
+## 2026年3月5日 - 配置参数外部化
+
+### 背景
+将上传文件大小限制和同时在线人数限制从代码硬编码提取到外部配置，方便部署时灵活调整。
+
+### 修改内容
+
+#### 1. 后端配置类 (`backend/app/core/config.py`)
+- 已定义 `UPLOAD_MAX_FILE_SIZE` 和 `MAX_CONCURRENT_USERS` 配置项
+- 使用 Pydantic Settings 支持环境变量自动加载
+
+#### 2. 上传文件大小限制外部化
+- **`backend/app/api/albums.py`**: 将 `MAX_FILE_SIZE = 104857600` 改为 `MAX_FILE_SIZE = settings.UPLOAD_MAX_FILE_SIZE`
+- **`backend/app/api/episodes.py`**: 将 `MAX_FILE_SIZE = 104857600` 改为 `MAX_FILE_SIZE = settings.UPLOAD_MAX_FILE_SIZE`
+- **`backend/app/api/upload.py`**: 将 `MAX_FILE_SIZE = 104857600` 改为 `MAX_FILE_SIZE = settings.UPLOAD_MAX_FILE_SIZE`
+- 添加了 `from app.core.config import settings` 导入
+
+#### 3. Docker Compose 环境变量配置 (`docker-compose.yml`)
+- 添加环境变量支持 `${VAR_NAME:-default}` 语法
+- 关键配置项：
+  - `MAX_CONCURRENT_USERS=${MAX_CONCURRENT_USERS:-10}`
+  - `UPLOAD_MAX_FILE_SIZE=${UPLOAD_MAX_FILE_SIZE:-104857600}`
+- 支持通过项目根目录 `.env` 文件覆盖所有配置
+
+#### 4. 环境变量示例文件 (`backend/.env.example`)
+- 包含所有可配置参数，包括：
+  - `MAX_CONCURRENT_USERS=10`
+  - `UPLOAD_MAX_FILE_SIZE=104857600`
+  - `SESSION_EXPIRE_SECONDS=1800`
+  - `STREAM_TOKEN_EXPIRE_SECONDS=600`
+
+### 配置方式
+
+#### 方式一：直接修改 docker-compose.yml
+```yaml
+environment:
+  - MAX_CONCURRENT_USERS=20
+  - UPLOAD_MAX_FILE_SIZE=209715200  # 200MB
+```
+
+#### 方式二：通过 .env 文件覆盖（推荐）
+1. 复制环境变量模板：`cp backend/.env.example .env`
+2. 编辑 `.env` 文件修改参数
+3. 启动服务：`docker-compose up -d`
+
+#### 方式三：部署时通过命令行传递
+```bash
+MAX_CONCURRENT_USERS=20 UPLOAD_MAX_FILE_SIZE=209715200 docker-compose up -d
+```
+
+### 配置优先级
+1. `docker-compose.yml` 中直接设置的值（最高）
+2. `.env` 文件中的值（次高）
+3. `config.py` 中的默认值（最低）
+
+### 验证测试
+- 通过 Python 语法检查确保所有修改文件无语法错误
+- 配置系统使用 Pydantic Settings，支持环境变量自动加载和类型验证
+
+### 参数说明
+| 参数名 | 默认值 | 说明 |
+|--------|--------|------|
+| `MAX_CONCURRENT_USERS` | 10 | 最大同时在线用户数 |
+| `UPLOAD_MAX_FILE_SIZE` | 104857600 (100MB) | 单个音频文件上传大小限制（字节） |
+| `SESSION_EXPIRE_SECONDS` | 1800 | 用户会话过期时间（秒） |
+| `STREAM_TOKEN_EXPIRE_SECONDS` | 600 | 流媒体播放令牌过期时间（秒） |
+
+### 注意事项
+1. 所有配置项已完全外部化，无需修改代码即可调整系统行为
+2. 生产环境务必修改 `SECRET_KEY` 和 `JWT_SECRET_KEY`
+3. 上传文件大小限制以字节为单位，计算方式：`1MB = 1048576 字节`
+4. 同时在线人数限制基于会话管理，超限时新用户无法登录

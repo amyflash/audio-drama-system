@@ -150,7 +150,7 @@ async def delete_album(
 # ==================== 专辑的剧集管理 ====================
 
 ALLOWED_TYPES = ["audio/mpeg", "audio/mp4", "audio/flac", "audio/x-m4a", "audio/mp3", "audio/x-mp3"]
-MAX_FILE_SIZE = 104857600  # 100MB
+MAX_FILE_SIZE = settings.UPLOAD_MAX_FILE_SIZE  # 100MB
 MEDIA_DIR = "/media/albums"
 
 

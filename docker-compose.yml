@@ -6,11 +6,14 @@ services:  # 必须包含 services 根节点
     image: audio-drama-system_combined:latest
     container_name: audio-drama-combined
     restart: unless-stopped
+    # 环境变量配置（可通过项目根目录的 .env 文件覆盖）
     environment:
-      - DATABASE_URL=sqlite:///./data/audio_drama.db
-      - SECRET_KEY=your-secret-key-change-in-production
-      - ALLOW_ORIGINS=*  # 由于前端和后端同源，可以设置为*或具体域名
-      # 其他环境变量
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///./data/audio_drama.db}
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
+      - ALLOW_ORIGINS=${ALLOW_ORIGINS:-*}  # 由于前端和后端同源，可以设置为*或具体域名
+      - MAX_CONCURRENT_USERS=${MAX_CONCURRENT_USERS:-10}
+      - UPLOAD_MAX_FILE_SIZE=${UPLOAD_MAX_FILE_SIZE:-104857600}
+      # 其他可选环境变量：JWT_SECRET_KEY、JWT_ALGORITHM、JWT_EXPIRE_SECONDS、SESSION_EXPIRE_SECONDS、STREAM_TOKEN_EXPIRE_SECONDS、DEFAULT_ADMIN_PASSWORD
     volumes:
       - /home/gbj/sqlite_data:/data
       - /home/gbj/db_data:/app/data
