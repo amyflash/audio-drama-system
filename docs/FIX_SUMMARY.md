@@ -29,6 +29,14 @@
 - 将所有 `@app.get("/api/...")` 路由定义移到 `app.mount()` 之前
 - 确保 API 路由优先匹配
 
+### 5. 前端 API 地址配置错误
+**问题:** 前端构建后 API 地址硬编码为 `http://localhost:8000`，外部访问时无法连接  
+**修复:** 
+- 修改 `app.config.ts` 设置 `apiBaseUrl: ''`（空字符串）
+- 修改 `nuxt.config.ts` 设置 `apiBaseUrl: ''`
+- 修改 `plugins/api.ts` 使用相对路径
+- 前端 API 请求自动使用当前服务器地址
+
 ## 📁 新增文件
 
 | 文件 | 说明 |
@@ -36,6 +44,7 @@
 | `backend/app/db/init_db.py` | SQLite 初始化脚本 |
 | `backend/init.sh` | 一键初始化 Shell 脚本 |
 | `backend/build-frontend.sh` | 前端构建脚本 |
+| `nuxt-frontend/app.config.ts` | 前端应用配置 |
 | `.env.example` | 环境变量模板 |
 | `README.md` | 项目说明文档 |
 
@@ -68,7 +77,7 @@ pip install -r requirements.txt
 ### 步骤 3：前端构建
 
 ```bash
-# 在后端目录执行
+# 构建前端静态文件（自动使用相对路径）
 ./build-frontend.sh
 ```
 
@@ -79,10 +88,10 @@ pip install -r requirements.txt
 pkill -f "uvicorn app.main:app"
 
 # 启动后端（包含前端静态文件）
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 &
 ```
 
-访问 http://localhost:8000
+访问 http://your-server-ip:8000
 
 ## 📋 初始化 SQLite 数据库
 
@@ -163,6 +172,9 @@ ps aux | grep uvicorn
 
 # 停止服务
 pkill -f "uvicorn app.main:app"
+
+# 查看日志
+tail -f /tmp/uvicorn.log
 ```
 
 ### 生产环境配置
@@ -227,7 +239,7 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 netstat -tlnp | grep 8000
 
 # 查看日志
-journalctl -u audio-drama -f  # systemd 方式
+tail -f /tmp/uvicorn.log
 ```
 
 ### 重新初始化
@@ -246,6 +258,15 @@ ls -la backend/static/
 
 # 重新构建前端
 ./build-frontend.sh
+```
+
+### API 请求地址错误
+如果前端 API 请求地址不正确，检查：
+```bash
+# 查看前端配置
+curl http://localhost:8000/ | grep 'apiBaseUrl'
+
+# 应该输出：apiBaseUrl:""（空字符串，使用相对路径）
 ```
 
 ## 📖 相关文档

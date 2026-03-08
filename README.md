@@ -13,12 +13,12 @@
 
 ## 🚀 快速开始
 
-### 1. 环境要求
+### 环境要求
 
 - Python 3.10+
 - Node.js 18+
 
-### 2. 后端部署
+### 1. 后端部署
 
 ```bash
 cd backend
@@ -30,24 +30,24 @@ source venv/bin/activate
 # 安装依赖
 pip install -r requirements.txt
 
-# 初始化数据库
+# 初始化数据库（创建表、索引、默认管理员）
 ./init.sh
 
 # 启动服务
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-### 3. 前端构建
+### 2. 前端构建
 
 ```bash
 cd backend
 
-# 构建前端静态文件
+# 构建前端静态文件（自动设置 API 地址为相对路径）
 ./build-frontend.sh
 
-# 重启后端服务（加载静态文件）
+# 重启后端服务（加载新的静态文件）
 pkill -f "uvicorn app.main:app"
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 &
 ```
 
 访问 http://localhost:8000
@@ -58,7 +58,7 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 |--------|------|------|
 | admin | 123456 | 管理员 |
 
-⚠️ 首次登录后请立即修改密码！
+⚠️ **首次登录后请立即修改密码！**
 
 ## 📁 项目结构
 
@@ -74,11 +74,14 @@ audio-drama-system/
 │   ├── data/            # SQLite 数据库
 │   ├── static/          # 前端静态文件
 │   ├── init.sh          # 初始化脚本
+│   ├── build-frontend.sh # 前端构建脚本
 │   └── requirements.txt
 ├── nuxt-frontend/       # Nuxt 3 前端源码
 │   ├── .output/public/  # 静态构建输出
+│   ├── app.config.ts    # 应用配置（API 地址）
 │   └── package.json
 ├── media/               # 音频文件存储
+│   └── albums/          # 按专辑 ID 存储
 └── docs/                # 文档
 ```
 
@@ -91,23 +94,35 @@ audio-drama-system/
 ## 📋 主要 API
 
 ### 认证
-- `POST /api/auth/login` - 用户登录
-- `POST /api/auth/logout` - 用户登出
-- `POST /api/auth/heartbeat` - 心跳保活
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/auth/login` | POST | 用户登录 |
+| `/api/auth/logout` | POST | 用户登出 |
+| `/api/auth/heartbeat` | POST | 心跳保活 |
 
 ### 专辑管理
-- `GET /api/admin/albums` - 获取专辑列表
-- `POST /api/admin/albums` - 创建专辑
-- `PUT /api/admin/albums/{id}` - 更新专辑
-- `DELETE /api/admin/albums/{id}` - 删除专辑
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/admin/albums` | GET | 获取专辑列表 |
+| `/api/admin/albums` | POST | 创建专辑 |
+| `/api/admin/albums/{id}` | GET | 获取专辑详情 |
+| `/api/admin/albums/{id}` | PUT | 更新专辑 |
+| `/api/admin/albums/{id}` | DELETE | 删除专辑 |
 
 ### 音频管理
-- `GET /api/admin/albums/{id}/episodes` - 获取剧集列表
-- `POST /api/admin/albums/{id}/episodes/batch-upload` - 批量上传音频
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/admin/albums/{id}/episodes` | GET | 获取剧集列表 |
+| `/api/admin/albums/{id}/episodes` | POST | 创建剧集 |
+| `/api/admin/albums/{id}/episodes/batch-upload` | POST | 批量上传音频 |
+| `/api/admin/episodes/{id}` | PUT | 更新剧集 |
+| `/api/admin/episodes/{id}` | DELETE | 删除剧集 |
 
 ### 音频流
-- `GET /api/stream/{episode_id}` - 获取音频流
-- `GET /api/stream/token/{episode_id}` - 获取流 Token
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/stream/{episode_id}` | GET | 获取音频流 |
+| `/api/stream/token/{episode_id}` | GET | 获取流 Token |
 
 ## 🛠️ 技术栈
 
@@ -115,8 +130,9 @@ audio-drama-system/
 |------|------|
 | 后端 | FastAPI + SQLAlchemy |
 | 数据库 | SQLite |
-| 前端 | Nuxt 3 + Vue 3 |
+| 前端 | Nuxt 3 + Vue 3 + TailwindCSS |
 | 认证 | JWT + Bcrypt |
+| 音频处理 | Mutagen |
 
 ## 📝 文档
 
@@ -140,7 +156,41 @@ cd backend && ./init.sh
 
 # 备份数据库
 cp backend/data/audio_drama.db backup/audio_drama_$(date +%Y%m%d).db
+
+# 查看进程
+ps aux | grep uvicorn
+
+# 停止服务
+pkill -f "uvicorn app.main:app"
+
+# 查看日志
+tail -f /tmp/uvicorn.log
 ```
+
+## 📂 音频文件存储
+
+上传的音频文件存储在 `/media/albums/` 目录下：
+
+```
+/media/albums/
+├── 1/                    # 专辑 ID
+│   ├── uuid-xxx.mp3      # 音频文件
+│   └── uuid-yyy.mp3
+└── 2/
+    └── uuid-zzz.mp3
+```
+
+本地开发时，可以创建软链接到项目目录：
+```bash
+ln -s /root/audio-drama-system/media /media
+```
+
+## 🔒 安全建议
+
+1. **修改默认密码** - 首次登录后立即修改 admin 密码
+2. **防火墙配置** - 仅开放必要端口（如 8000）
+3. **定期备份** - 每天备份数据库和音频文件
+4. **HTTPS** - 生产环境建议使用 Nginx 反向代理配置 HTTPS
 
 ## 📄 License
 
