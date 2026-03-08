@@ -36,8 +36,8 @@ export default defineNuxtConfig({
   // 运行时配置（环境变量）
   runtimeConfig: {
     public: {
-      // 优先级：环境变量 > 本地默认地址
-      apiBaseUrl: process.env.API_BASE_URL || process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'
+      // 使用空字符串，由 app.config.ts 控制
+      apiBaseUrl: ''
     }
   },
 

@@ -14,8 +14,8 @@ echo "📦 正在安装依赖..."
 npm install --silent
 
 # 设置 API 地址环境变量
-export API_BASE_URL="http://localhost:8000"
-export NUXT_PUBLIC_API_BASE_URL="http://localhost:8000"
+export API_BASE_URL="http://36.50.84.162:8000"
+export NUXT_PUBLIC_API_BASE_URL="http://36.50.84.162:8000"
 
 echo "🔨 正在构建静态文件 (API: $API_BASE_URL)..."
 npm run generate
