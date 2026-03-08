@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     JWT_EXPIRE_SECONDS: int = 1800
 
     # 并发控制
-    MAX_CONCURRENT_USERS: int = 10
+    MAX_CONCURRENT_USERS: int = 1000000
     SESSION_EXPIRE_SECONDS: int = 1800
 
     # 文件上传

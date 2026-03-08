@@ -84,25 +84,7 @@ async def refresh_session(db: Session, user_id: int) -> bool:
 
 async def check_can_login(db: Session, user_id: int) -> bool:
     """检查是否可以登录（并发控制）"""
-    now = datetime.utcnow()
-
-    # 检查当前在线数是否已达上限
-    current_count = db.query(SessionModel).filter(
-        SessionModel.expires_at > now
-    ).count()
-
-    if current_count >= settings.MAX_CONCURRENT_USERS:
-        # 检查用户是否已在在线列表中（允许重复登录）
-        existing = db.query(SessionModel).filter(
-            and_(
-                SessionModel.user_id == user_id,
-                SessionModel.expires_at > now
-            )
-        ).first()
-
-        if not existing:
-            return False
-
+    # 去掉并发控制，始终允许登录
     return True
 
 

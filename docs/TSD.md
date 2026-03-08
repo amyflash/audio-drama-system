@@ -773,7 +773,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - DATABASE_URL=sqlite:///./data/audio_drama.db
       - SECRET_KEY=your-secret-key-here
-      - MAX_CONCURRENT_USERS=10
+      - MAX_CONCURRENT_USERS=1000000
       - SESSION_EXPIRE_SECONDS=1800
     volumes:
       - db_data:/app/data

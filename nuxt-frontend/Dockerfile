@@ -1,28 +1,29 @@
-FROM node:22-alpine AS builder
+# Nuxt Frontend Dockerfile
+FROM node:20-alpine
 
 WORKDIR /app
+
+# 安装构建依赖
+RUN apk add --no-cache python3 make g++
+
+# 复制 package.json
+COPY package*.json ./
 
 # 安装依赖
-COPY package.json package-lock.json* ./
-RUN npm install
+RUN npm ci
 
-# 复制源码并构建 Nuxt 应用
+# 复制源代码
 COPY . .
+
+# 构建应用
 RUN npm run build
 
-# 生产运行镜像
-FROM node:22-alpine AS runner
+# 暴露端口
+EXPOSE 3000
 
-WORKDIR /app
-
-# 仅复制运行所需文件，减小镜像体积
-COPY --from=builder /app/.output ./.output
-
-# Nuxt/Nitro 默认读取这些环境变量来确定监听端口
-ENV NITRO_PORT=80
-ENV NITRO_HOST=0.0.0.0
-
-EXPOSE 80
+# 启动应用
+ENV NODE_ENV=production
+ENV NUXT_HOST=0.0.0.0
+ENV NUXT_PORT=3000
 
 CMD ["node", ".output/server/index.mjs"]
-
