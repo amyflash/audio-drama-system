@@ -8,21 +8,18 @@ from app.db.base import get_db, init_db
 from app.core.config import settings
 from app.api import auth, albums, episodes, upload, stream, users
 
-# 创建FastAPI应用
+# 创建 FastAPI 应用
 app = FastAPI(
-    title="极简广播剧管理系统API",
-    description="极简广播剧管理与在线收听系统的后端API",
+    title="极简广播剧管理系统 API",
+    description="极简广播剧管理与在线收听系统的后端 API",
     version="1.0.0"
 )
 
-# CORS中间件
-# 从环境变量读取允许的域名，支持多个域名用逗号分隔
+# CORS 中间件
 allow_origins_str = os.getenv("ALLOW_ORIGINS", "")
 if allow_origins_str:
-    # 按逗号分隔，去除空格
     allow_origins = [origin.strip() for origin in allow_origins_str.split(",")]
 else:
-    # 默认允许所有来源（便于快速部署，生产环境建议指定域名）
     allow_origins = ["*"]
 
 app.add_middleware(
@@ -33,23 +30,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 注册路由
-app.include_router(auth.router, prefix="/api")
-app.include_router(albums.router, prefix="/api/admin")
-app.include_router(episodes.router, prefix="/api/admin")
-app.include_router(upload.router, prefix="/api/admin")
-app.include_router(stream.router, prefix="/api")
-app.include_router(users.router, prefix="/api/admin")
-
-# 静态文件服务（SPA前端）
-# 注意：此挂载应放在所有API路由之后，以便API路由优先匹配
-import os
-static_dir = os.path.join(os.path.dirname(__file__), "..", "static")
-if os.path.exists(static_dir):
-    app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
-    print(f"✅ 已挂载静态文件目录: {static_dir}")
-else:
-    print(f"⚠️  静态文件目录不存在: {static_dir}，前端将不可用")
+# ==================== API 路由定义（必须在静态文件挂载之前）====================
 
 # 健康检查
 @app.get("/api/health")
@@ -91,13 +72,11 @@ async def system_status():
     db = next(get_db())
     try:
         online_count = await get_current_online_count(db)
-        # 统计专辑和剧集数量
         total_albums = db.query(func.count(Album.id)).scalar()
         total_episodes = db.query(func.count(Episode.id)).scalar()
     finally:
         db.close()
 
-    # 存储空间
     media_dir = "/media/albums"
     if os.path.exists(media_dir):
         total_size = sum(
@@ -120,10 +99,28 @@ async def system_status():
         }
     }
 
-# 全局异常处理
+# 注册路由
+app.include_router(auth.router, prefix="/api")
+app.include_router(albums.router, prefix="/api/admin")
+app.include_router(episodes.router, prefix="/api/admin")
+app.include_router(upload.router, prefix="/api/admin")
+app.include_router(stream.router, prefix="/api")
+app.include_router(users.router, prefix="/api/admin")
+
+# ==================== 静态文件服务（SPA 前端）====================
+# 注意：必须放在所有 API 路由之后，确保 API 优先匹配
+static_dir = os.path.join(os.path.dirname(__file__), "..", "static")
+if os.path.exists(static_dir):
+    app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
+    print(f"✅ 已挂载静态文件目录：{static_dir}")
+else:
+    print(f"⚠️  静态文件目录不存在：{static_dir}，前端将不可用")
+
+# ==================== 全局异常处理 ====================
+
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request, exc):
-    """HTTP异常处理"""
+    """HTTP 异常处理"""
     return JSONResponse(
         status_code=exc.status_code,
         content={"success": False, "error": exc.detail}
@@ -134,22 +131,22 @@ async def general_exception_handler(request, exc):
     """通用异常处理"""
     import traceback
     error_detail = traceback.format_exc()
-    print(f"未捕获的异常: {error_detail}")
+    print(f"未捕获的异常：{error_detail}")
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"success": False, "error": "内部服务器错误"}
     )
 
-# 启动事件
+# ==================== 启动事件 ====================
+
 @app.on_event("startup")
 async def startup_event():
     """应用启动时的初始化"""
     print("🚀 正在初始化应用...")
-    # 初始化数据库
     try:
         init_db()
     except Exception as e:
-        print(f"❌ 数据库初始化失败: {e}")
+        print(f"❌ 数据库初始化失败：{e}")
         raise
     print("✅ 应用初始化完成")
 
