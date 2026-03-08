@@ -2,12 +2,11 @@ import { defineNuxtPlugin } from '#app'
 import axios from 'axios'
 
 export default defineNuxtPlugin((nuxtApp) => {
-  const config = useRuntimeConfig()
+  const appConfig = useAppConfig()
 
-  // 创建共享的 axios 实例
-  // 使用空baseURL，由Nuxt代理转发所有API请求
+  // 创建共享的 axios 实例，使用 appConfig 中的 API 地址
   const api = axios.create({
-    baseURL: '',
+    baseURL: appConfig.apiBaseUrl || 'http://localhost:8000',
     headers: {
       'Content-Type': 'application/json'
     }
@@ -123,9 +122,8 @@ export default defineNuxtPlugin((nuxtApp) => {
   }
 
   // 为 episodeApi 添加 getStreamUrl 方法
-  // 使用相对路径，由Nuxt代理转发
   episodeApi.getStreamUrl = (id: number) =>
-    `/api/stream/${id}` as any
+    `${appConfig.apiBaseUrl || 'http://localhost:8000'}/api/stream/${id}` as any
 
   // 提供 API 方法
   return {

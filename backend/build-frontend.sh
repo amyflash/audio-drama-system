@@ -13,7 +13,11 @@ cd "$(dirname "$0")/../nuxt-frontend"
 echo "📦 正在安装依赖..."
 npm install --silent
 
-echo "🔨 正在构建静态文件..."
+# 设置 API 地址环境变量
+export API_BASE_URL="http://localhost:8000"
+export NUXT_PUBLIC_API_BASE_URL="http://localhost:8000"
+
+echo "🔨 正在构建静态文件 (API: $API_BASE_URL)..."
 npm run generate
 
 echo "📁 正在复制静态文件到后端..."
