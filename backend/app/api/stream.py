@@ -1,26 +1,119 @@
-from fastapi import APIRouter, Depends, status, HTTPException, Request, Query
+"""
+音频流路由
+支持两种认证方式：
+  1. SSO token（Authorization: Bearer <sso_token>），payload 里 user_id 在 sub 字段
+  2. Stream 专用 token（?token=<stream_token>），payload 里有 type=stream / user_id / episode_id
+"""
+from fastapi import APIRouter, Depends, status, HTTPException, Request
+from fastapi.responses import Response, FileResponse
 from sqlalchemy.orm import Session
-import os
+import sys
+from datetime import datetime, timedelta
+from pathlib import Path
+from jose import JWTError, jwt
+
 from app.db.base import get_db
-from app.models.models import Episode, User
-from app.api.deps import get_stream_auth_user, get_current_user
-from app.core.security import generate_stream_token, verify_stream_token
+from app.models.models import Episode
+from app.api.sso import get_current_user_from_token
+from app.core.config import settings
 
 router = APIRouter(prefix="/stream", tags=["音频流"])
 
 
-@router.get("/token/{episode_id}")
-async def get_stream_token(
-    episode_id: int,
-    current_user: User = Depends(get_current_user)
-):
-    """获取音频流Token（用于播放器加载）"""
-    token = generate_stream_token(current_user.id, episode_id)
+# ---------------------------------------------------------------------------
+# Token 工具
+# ---------------------------------------------------------------------------
 
+def generate_stream_token(user_id: int, episode_id: int) -> str:
+    """生成音频流专用短期 JWT"""
+    payload = {
+        "type": "stream",
+        "user_id": user_id,
+        "episode_id": episode_id,
+        "exp": datetime.utcnow() + timedelta(seconds=settings.STREAM_TOKEN_EXPIRE_SECONDS),
+    }
+    return jwt.encode(payload, settings.SSO_SECRET_KEY, algorithm=settings.SSO_ALGORITHM)
+
+
+def decode_sso_token(token: str):
+    """
+    解码 SSO token（jwt-auth 签发），提取 user_id。
+    SSO token 的 user_id 在 'sub' 字段。
+    返回 int 或 None。
+    """
+    try:
+        payload = jwt.decode(token, settings.SSO_SECRET_KEY, algorithms=[settings.SSO_ALGORITHM])
+        sub = payload.get("sub")
+        if sub is None:
+            return None
+        return int(sub)
+    except (JWTError, ValueError):
+        return None
+
+
+def decode_stream_token(token: str, episode_id: int):
+    """
+    解码 stream 专用 token，校验 type / episode_id，提取 user_id。
+    Stream token 的 user_id 在 'user_id' 字段。
+    返回 int 或 None。
+    """
+    try:
+        payload = jwt.decode(token, settings.SSO_SECRET_KEY, algorithms=[settings.SSO_ALGORITHM])
+        if payload.get("type") != "stream":
+            return None
+        if payload.get("episode_id") != episode_id:
+            return None
+        user_id = payload.get("user_id")
+        if user_id is None:
+            return None
+        return int(user_id)
+    except (JWTError, ValueError):
+        return None
+
+
+# ---------------------------------------------------------------------------
+# 路径工具
+# ---------------------------------------------------------------------------
+
+def resolve_file_path(file_path: str) -> Path:
+    """
+    将数据库存储的路径解析为当前系统绝对路径。
+    - 绝对路径直接使用
+    - 相对路径以 MEDIA_DIR 为基准
+    - Windows 自动加长路径前缀
+    """
+    p = Path(file_path)
+
+    if p.is_absolute():
+        resolved = p.resolve()
+    else:
+        media_dir = Path(settings.MEDIA_DIR)
+        if not media_dir.is_absolute():
+            media_dir = Path(__file__).resolve().parent.parent.parent / media_dir
+        resolved = (media_dir / p).resolve()
+
+    if sys.platform == "win32":
+        resolved = Path("\\\\?\\" + str(resolved))
+
+    return resolved
+
+
+# ---------------------------------------------------------------------------
+# 路由
+# ---------------------------------------------------------------------------
+
+@router.get("/token/{episode_id}")
+async def get_stream_token(episode_id: int, request: Request):
+    """
+    获取音频流专用 Token。
+    未登录直接返回 401，前端应引导用户登录。
+    """
+    user = get_current_user_from_token(request)  # 失败自动抛 401
+    token = generate_stream_token(user.id, episode_id)
     return {
         "success": True,
         "token": token,
-        "expires_in": 600  # 10分钟
+        "expires_in": settings.STREAM_TOKEN_EXPIRE_SECONDS,
     }
 
 
@@ -28,103 +121,90 @@ async def get_stream_token(
 async def stream_audio(
     episode_id: int,
     request: Request,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
-    获取音频流（防下载核心接口）
+    音频流接口（防下载）。
 
-    认证方式：
-    1. Authorization header: Bearer {token}
-    2. Query param: token=xxx
-    3. Query param需要与episode_id匹配
+    认证优先级：
+    1. ?token=xxx              -> stream 专用 token（播放器直接嵌 URL 时使用）
+    2. Authorization: Bearer   -> SSO token（Ajax 请求时使用）
     """
-    # 1. 获取认证信息
-    auth_token = request.headers.get("authorization", "").replace("Bearer ", "")
-    query_token = request.query_params.get("token", "")
-
     user_id = None
 
-    # 2. 验证Token
-    if auth_token:
-        # 方式1: Authorization header
-        from app.core.security import decode_token
-        payload = decode_token(auth_token)
-        if payload and "user_id" in payload:
-            user_id = payload["user_id"]
-    elif query_token:
-        # 方式2: 流式专用token（需要验证）
-        from app.core.security import decode_token
-        payload = decode_token(query_token)
-        if payload and payload.get("type") == "stream":
-            # 流式token需要验证user_id和episode_id匹配
-            if (payload.get("user_id") and
-                payload.get("episode_id") == episode_id):
-                user_id = payload["user_id"]
+    # 方式 1：stream 专用 token（query param）
+    query_token = request.query_params.get("token", "")
+    if query_token:
+        user_id = decode_stream_token(query_token, episode_id)
 
-    # 3. 检查认证是否成功
-    if not user_id:
+    # 方式 2：SSO token（Authorization header）
+    if user_id is None:
+        auth_header = request.headers.get("authorization", "")
+        if auth_header.lower().startswith("bearer "):
+            user_id = decode_sso_token(auth_header[7:])
+
+    if user_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="需要认证"
+            detail="需要认证",
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # 4. 查询音频文件
+    # 查询剧集
     episode = db.query(Episode).filter(Episode.id == episode_id).first()
     if not episode:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="音频不存在")
+
+    # 解析文件路径
+    file_path = resolve_file_path(episode.file_path)
+    if not file_path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="音频不存在"
+            detail=f"音频文件丢失: {episode.file_path}",
         )
 
-    # 5. 检查文件是否存在
-    if not os.path.exists(episode.file_path):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="音频文件丢失"
-        )
+    file_size = file_path.stat().st_size
+    file_path_str = str(file_path)
 
-    # 6. 读取文件
-    file_size = os.path.getsize(episode.file_path)
+    base_headers = {
+        "Content-Disposition": "inline",
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Accept-Ranges": "bytes",
+    }
 
-    # 7. 处理Range请求（断点续传）
+    # Range 请求（断点续传）
     range_header = request.headers.get("range")
     if range_header:
-        # 解析Range header（格式: bytes=start-end）
-        start, end = range_header.replace("bytes=", "").split("-")
-        start = int(start)
-        end = int(end) if end else file_size - 1
-        content_length = end - start + 1
+        try:
+            range_val = range_header.replace("bytes=", "")
+            start_str, end_str = range_val.split("-", 1)
+            start = int(start_str)
+            end = int(end_str) if end_str else file_size - 1
+        except ValueError:
+            raise HTTPException(status_code=status.HTTP_416_REQUESTED_RANGE_NOT_SATISFIABLE)
 
-        # 读取指定范围的数据
-        with open(episode.file_path, "rb") as f:
+        if start > end or end >= file_size:
+            raise HTTPException(
+                status_code=status.HTTP_416_REQUESTED_RANGE_NOT_SATISFIABLE,
+                headers={"Content-Range": f"bytes */{file_size}"},
+            )
+
+        content_length = end - start + 1
+        with open(file_path_str, "rb") as f:
             f.seek(start)
             data = f.read(content_length)
 
-        # 返回206 Partial Content
-        from fastapi.responses import Response
         return Response(
             content=data,
             status_code=206,
             media_type="audio/mpeg",
             headers={
+                **base_headers,
                 "Content-Range": f"bytes {start}-{end}/{file_size}",
                 "Content-Length": str(content_length),
-                "Accept-Ranges": "bytes",
-                "Content-Disposition": "inline",  # 强制浏览器播放
-                "X-Content-Type-Options": "nosniff",
-                "Cache-Control": "no-cache, no-store, must-revalidate",
-            }
+            },
         )
-    else:
-        # 完整文件返回
-        from fastapi.responses import FileResponse
-        return FileResponse(
-            episode.file_path,
-            media_type="audio/mpeg",
-            headers={
-                "Content-Disposition": "inline",  # 强制浏览器播放
-                "X-Content-Type-Options": "nosniff",
-                "Cache-Control": "no-cache, no-store, must-revalidate",
-                "Accept-Ranges": "bytes",
-            }
-        )
+
+    # 完整文件
+    return FileResponse(file_path_str, media_type="audio/mpeg", headers=base_headers)

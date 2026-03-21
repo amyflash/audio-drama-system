@@ -48,15 +48,6 @@
 
         <div style="display: flex; align-items: center; gap: 8px;">
           <button
-            v-if="user"
-            @click="showChangePasswordModal = true"
-            style="background-color: #3b82f6; color: white; padding: 6px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; border: none; cursor: pointer; transition: background-color 0.2s;"
-            onmouseover="this.style.backgroundColor='#2563eb'"
-            onmouseout="this.style.backgroundColor='#3b82f6'"
-          >
-            修改密码
-          </button>
-          <button
             @click="handleLogout"
             style="background-color: #fee2e2; color: #b91c1c; padding: 6px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; border: none; cursor: pointer; transition: background-color 0.2s;"
             onmouseover="this.style.backgroundColor='#fecaca'"
@@ -76,15 +67,6 @@
           <p class="page-subtitle">管理你的广播剧专辑和音频内容</p>
         </div>
         <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-          <button
-            v-if="isAdmin()"
-            @click="navigateTo('/users')"
-            style="background-color: #f59e0b; color: white; font-weight: 500; padding: 10px 16px; border-radius: 8px; border: none; cursor: pointer; transition: background-color 0.2s; font-size: 14px;"
-            onmouseover="this.style.backgroundColor='#d97706'"
-            onmouseout="this.style.backgroundColor='#f59e0b'"
-          >
-            👥 用户管理
-          </button>
           <button
             v-if="isAdmin() && albums.length > 0"
             @click="showSearchBox = !showSearchBox"
@@ -357,84 +339,13 @@
       </div>
     </div>
 
-    <!-- 修改密码弹窗 -->
-    <div v-if="showChangePasswordModal" style="position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 16px;">
-      <div style="background-color: white; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); width: 100%; max-width: 448px;">
-        <div style="padding: 16px 24px;">
-          <h2 style="font-size: 20px 24px; font-weight: bold; color: #1f2937; margin-bottom: 16px 24px;">修改密码</h2>
-
-          <form @submit.prevent="handleChangePassword">
-            <div style="margin-bottom: 16px;">
-              <label style="display: block; color: #374151; font-size: 14px; font-weight: bold; margin-bottom: 8px;">原密码</label>
-              <input
-                v-model="passwordForm.oldPassword"
-                type="password"
-                placeholder="请输入原密码"
-                required
-                style="width: 100%; padding: 8px 16px 12px; border: 1px solid #d1d5db; border-radius: 8px; outline: none; transition: border-color 0.2s;"
-                onfocus="this.style.borderColor='#10b981'"
-                onblur="this.style.borderColor='#d1d5db'"
-              />
-            </div>
-
-            <div style="margin-bottom: 16px;">
-              <label style="display: block; color: #374151; font-size: 14px; font-weight: bold; margin-bottom: 8px;">新密码</label>
-              <input
-                v-model="passwordForm.newPassword"
-                type="password"
-                placeholder="请输入新密码（至少6个字符）"
-                required
-                minlength="6"
-                style="width: 100%; padding: 8px 16px 12px; border: 1px solid #d1d5db; border-radius: 8px; outline: none; transition: border-color 0.2s;"
-                onfocus="this.style.borderColor='#10b981'"
-                onblur="this.style.borderColor='#d1d5db'"
-              />
-            </div>
-
-            <div style="margin-bottom: 24px;">
-              <label style="display: block; color: #374151; font-size: 14px; font-weight: bold; margin-bottom: 8px;">确认新密码</label>
-              <input
-                v-model="passwordForm.confirmPassword"
-                type="password"
-                placeholder="请再次输入新密码"
-                required
-                style="width: 100%; padding: 8px 16px 12px; border: 1px solid #d1d5db; border-radius: 8px; outline: none; transition: border-color 0.2s;"
-                onfocus="this.style.borderColor='#10b981'"
-                onblur="this.style.borderColor='#d1d5db'"
-              />
-            </div>
-
-            <div style="display: flex; justify-content: flex-end; gap: 12px;">
-              <button
-                type="button"
-                @click="showChangePasswordModal = false"
-                style="padding: 8px 16px; border: 1px solid #d1d5db; border-radius: 8px; background-color: white; color: #374151; font-weight: 500; cursor: pointer; transition: background-color 0.2s;"
-                onmouseover="this.style.backgroundColor='#f9fafb'"
-                onmouseout="this.style.backgroundColor='white'"
-              >
-                取消
-              </button>
-              <button
-                type="submit"
-                :disabled="changingPassword"
-                style="padding: 8px 16px; background-color: #3b82f6; color: white; border-radius: 8px; font-weight: 500; cursor: pointer; transition: background-color 0.2s; border: none;"
-                onmouseover="!this.disabled && (this.style.backgroundColor='#2563eb')"
-                onmouseout="!this.disabled && (this.style.backgroundColor='#3b82f6'"
-              >
-                {{ changingPassword ? '修改中...' : '确认修改' }}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 
-const { $albumApi, $authApi } = useNuxtApp()
+const { $albumApi } = useNuxtApp()
 
 // 从 localStorage 获取用户信息
 const user = computed(() => {
@@ -469,15 +380,6 @@ const editingAlbum = ref({ id: 0, title: '', description: '', cover_image: '' })
 const searchQuery = ref('')
 const searching = ref(false)
 const searched = ref(false)
-
-// 修改密码相关
-const showChangePasswordModal = ref(false)
-const changingPassword = ref(false)
-const passwordForm = ref({
-  oldPassword: '',
-  newPassword: '',
-  confirmPassword: ''
-})
 
 // 自定义 Toast 状态
 const toast = ref({
@@ -600,53 +502,6 @@ const clearSearch = () => {
   searched.value = false
   filteredAlbums.value = [...albums.value]
   showSearchBox.value = false
-}
-
-const handleChangePassword = async () => {
-  if (!passwordForm.value.oldPassword.trim()) {
-    showToast('请输入原密码', 'warning')
-    return
-  }
-  if (!passwordForm.value.newPassword.trim()) {
-    showToast('请输入新密码', 'warning')
-    return
-  }
-  if (passwordForm.value.newPassword.length < 6) {
-    showToast('新密码至少需要6个字符', 'warning')
-    return
-  }
-  if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
-    showToast('两次输入的新密码不一致', 'warning')
-    return
-  }
-
-  changingPassword.value = true
-  try {
-    // 验证原密码是否正确
-    await $authApi.login({
-      username: user.value?.username || '',
-      password: passwordForm.value.oldPassword
-    })
-
-    // 更新密码
-    await $authApi.updateUser(user.value?.id || 0, {
-      password: passwordForm.value.newPassword
-    })
-
-    showToast('密码修改成功，请重新登录', 'success')
-    showChangePasswordModal.value = false
-    passwordForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' }
-
-    // 重新登录
-    setTimeout(() => {
-      handleLogout()
-    }, 1500)
-  } catch (error: any) {
-    const message = error.response?.data?.detail || '密码修改失败，请检查原密码是否正确'
-    showToast(message, 'error')
-  } finally {
-    changingPassword.value = false
-  }
 }
 
 const handleLogout = async () => {

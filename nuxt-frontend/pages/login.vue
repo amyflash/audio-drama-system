@@ -8,53 +8,41 @@
         <p class="text-emerald-100/90 text-base sm:text-lg">柔和绿色 · 护眼登录</p>
       </div>
 
-      <!-- 登录表单 -->
+      <!-- 登录区域 -->
       <div class="p-6 sm:p-8 bg-gradient-to-b from-emerald-50/40 to-white">
-        <form @submit.prevent="handleLogin">
-          <!-- 用户名输入 -->
-          <div class="mb-5">
-            <label class="block text-emerald-900 text-base sm:text-sm font-semibold mb-2">用户名</label>
-            <input
-              v-model="username"
-              type="text"
-              placeholder="请输入用户名"
-              required
-              class="w-full px-4 py-3 sm:py-2 border border-emerald-200 rounded-lg bg-emerald-50/40 text-emerald-900 placeholder:text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-shadow"
-            />
-          </div>
-
-          <!-- 密码输入 -->
-          <div class="mb-6">
-            <label class="block text-emerald-900 text-base sm:text-sm font-semibold mb-2">密码</label>
-            <input
-              v-model="password"
-              type="password"
-              placeholder="请输入密码"
-              required
-              class="w-full px-4 py-3 sm:py-2 border border-emerald-200 rounded-lg bg-emerald-50/40 text-emerald-900 placeholder:text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-shadow"
-              show-password
-            />
-          </div>
-
-          <!-- 登录按钮 -->
+        <!-- SSO 统一登录 -->
+        <div v-if="!ssoLoading">
           <button
-            type="submit"
+            @click="handleSSOLogin"
             :disabled="loading"
-            class="w-full bg-emerald-600 hover:bg-emerald-700 text-emerald-50 font-semibold py-3 px-4 rounded-lg shadow-md shadow-emerald-200/80 transition-colors duration-150 disabled:bg-emerald-300 disabled:cursor-not-allowed"
+            class="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-emerald-50 font-semibold py-4 px-4 rounded-lg shadow-md shadow-emerald-200/80 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {{ loading ? '登录中...' : '登录' }}
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            {{ loading ? '正在跳转...' : '统一账号登录' }}
           </button>
+        </div>
 
-          <!-- 错误提示 -->
-          <div v-if="error" class="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-            {{ error }}
+        <!-- SSO 登录中 -->
+        <div v-else class="text-center py-4">
+          <div class="flex items-center justify-center gap-2 text-emerald-600">
+            <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>正在验证登录状态...</span>
           </div>
+        </div>
 
-        </form>
+        <!-- 错误提示 -->
+        <div v-if="error" class="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          {{ error }}
+        </div>
       </div>
 
-      <!-- 底部装饰 -->
-      <div class="bg-emerald-50 px-6 sm:px-8 py-3 sm:py-4 text-center text-xs sm:text-xs text-emerald-400">
+      <!-- 底部 -->
+      <div class="bg-emerald-50 px-6 sm:px-8 py-3 sm:py-4 text-center text-xs text-emerald-400">
         极简广播剧系统 v1.0 · 护眼模式
       </div>
     </div>
@@ -62,42 +50,40 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from '#app'
+import { ref, onMounted } from 'vue'
 
-const router = useRouter()
-const username = ref('')
-const password = ref('')
 const loading = ref(false)
+const ssoLoading = ref(false)
 const error = ref('')
 
-const handleLogin = async () => {
-  if (!username.value.trim() || !password.value.trim()) {
-    error.value = '请输入用户名和密码'
-    return
-  }
-
+// 处理 SSO 登录跳转
+const handleSSOLogin = async () => {
   loading.value = true
   error.value = ''
 
   try {
-    // 调用登录 API（在页面直接使用 auth API）
-    const { $authApi } = useNuxtApp()
-    const response = await $authApi.login({ username: username.value, password: password.value })
-    const loginData = response.data
-
-    // 保存 token 和用户信息
-    if (process.client) {
-      localStorage.setItem('token', loginData.access_token)
-      localStorage.setItem('user', JSON.stringify(loginData.user))
-    }
-
-    error.value = ''
-    await navigateTo('/')
-  } catch (err: any) {
-    error.value = err.response?.data?.detail || '登录失败，请检查用户名和密码'
-  } finally {
+    const response = await $fetch('/api/auth/sso/login-url', {
+      params: {
+        // FIX: 登录成功后由后端 HTML 回调页跳转到首页
+        // 不能用 window.location.href（那是登录页自身），要明确指定目标页
+        redirect_uri: window.location.origin + '/'
+      }
+    })
+    window.location.href = response.login_url
+  } catch (e: any) {
+    error.value = '获取登录地址失败，请稍后重试'
     loading.value = false
   }
 }
+
+// FIX: 删除 handleSSOCallback
+// 原来的逻辑期望 jwt-auth 把 token 带回登录页再由前端 POST 验证，
+// 但实际上 jwt-auth 直接把浏览器重定向到后端 /api/auth/sso/callback，
+// 由后端 HTML 页面写 localStorage 并跳转，前端这里永远拿不到 token query 参数。
+// 两套流程混用导致 localStorage 始终为空。
+// 现在统一由后端 HTML 回调页负责写 localStorage + 跳转，前端无需处理。
+
+onMounted(async () => {
+  // FIX: 不再在登录页处理回调，回调由后端 /api/auth/sso/callback 的 HTML 页面处理
+})
 </script>

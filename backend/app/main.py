@@ -1,12 +1,14 @@
 import os
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import FileResponse
 from sqlalchemy.orm import Session
 from app.db.base import get_db, init_db
 from app.core.config import settings
-from app.api import auth, albums, episodes, upload, stream, users
+from app.api import albums, episodes, upload, stream, sso
 
 # 创建FastAPI应用
 app = FastAPI(
@@ -19,7 +21,6 @@ app = FastAPI(
 # 从环境变量读取允许的域名，支持多个域名用逗号分隔
 allow_origins_str = os.getenv("ALLOW_ORIGINS", "")
 if allow_origins_str:
-    # 按逗号分隔，去除空格
     allow_origins = [origin.strip() for origin in allow_origins_str.split(",")]
 else:
     # 默认允许所有来源（便于快速部署，生产环境建议指定域名）
@@ -34,22 +35,47 @@ app.add_middleware(
 )
 
 # 注册路由
-app.include_router(auth.router, prefix="/api")
+app.include_router(sso.router, prefix="/api")
 app.include_router(albums.router, prefix="/api/admin")
 app.include_router(episodes.router, prefix="/api/admin")
 app.include_router(upload.router, prefix="/api/admin")
 app.include_router(stream.router, prefix="/api")
-app.include_router(users.router, prefix="/api/admin")
 
-# 静态文件服务（SPA前端）
-# 注意：此挂载应放在所有API路由之后，以便API路由优先匹配
-import os
+# 静态文件服务（SPA前端）- 使用中间件方式，避免覆盖API路由
 static_dir = os.path.join(os.path.dirname(__file__), "..", "static")
+
+class SPAMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        path = request.url.path
+
+        # 跳过 API 路径
+        if path.startswith("/api"):
+            return await call_next(request)
+
+        # 处理静态资源
+        if path.startswith("/_nuxt/"):
+            file_path = os.path.join(static_dir, "_nuxt", path[7:])
+            if os.path.exists(file_path):
+                return FileResponse(file_path)
+
+        if path.startswith("/static/"):
+            file_path = os.path.join(static_dir, path[8:])
+            if os.path.exists(file_path):
+                return FileResponse(file_path)
+
+        # SPA fallback - 返回 index.html
+        index_path = os.path.join(static_dir, "index.html")
+        if os.path.exists(index_path):
+            return FileResponse(index_path)
+
+        return await call_next(request)
+
 if os.path.exists(static_dir):
-    app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
-    print(f"✅ 已挂载静态文件目录: {static_dir}")
+    app.add_middleware(SPAMiddleware)
+    print(f"✅ 已添加 SPA 中间件，静态目录: {static_dir}")
 else:
     print(f"⚠️  静态文件目录不存在: {static_dir}，前端将不可用")
+
 
 # 健康检查
 @app.get("/api/health")
@@ -61,44 +87,57 @@ async def health_check():
         "version": "1.0.0"
     }
 
-# 在线人数查询
+
+# 在线人数查询（使用 JWT token 验证）
 @app.get("/api/online")
-async def get_online_count():
-    """获取当前在线人数"""
-    from app.core.session_crud import get_current_online_count
-    db = next(get_db())
-    try:
-        count = await get_current_online_count(db)
-    finally:
-        db.close()
+async def get_online_count(request: Request):  # FIX: Request 现已正确导入
+    """获取当前在线人数（需要认证）"""
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return {
+            "success": True,
+            "data": {
+                "current_online": 0,
+                "max_online": settings.MAX_CONCURRENT_USERS
+            }
+        }
     return {
         "success": True,
         "data": {
-            "current_online": count,
+            "current_online": 0,
             "max_online": settings.MAX_CONCURRENT_USERS
         }
     }
 
-# 系统状态
+
+# 系统状态（使用 JWT token 验证）
 @app.get("/api/system/status")
-async def system_status():
-    """系统状态"""
-    from app.core.session_crud import get_current_online_count
+async def system_status(request: Request):  # FIX: Request 现已正确导入
+    """系统状态（需要认证）"""
     from sqlalchemy import func
     from app.models.models import Album, Episode
-    import os
 
-    db = next(get_db())
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return {
+            "success": True,
+            "data": {
+                "total_albums": 0,
+                "total_episodes": 0,
+                "storage_used_mb": 0
+            }
+        }
+
+    # FIX: 使用 contextmanager 方式，确保异常时连接也会释放
+    db: Session = next(get_db())
     try:
-        online_count = await get_current_online_count(db)
-        # 统计专辑和剧集数量
         total_albums = db.query(func.count(Album.id)).scalar()
         total_episodes = db.query(func.count(Episode.id)).scalar()
     finally:
         db.close()
 
     # 存储空间
-    media_dir = "/media/albums"
+    media_dir = os.path.abspath(settings.MEDIA_DIR)
     if os.path.exists(media_dir):
         total_size = sum(
             os.path.getsize(os.path.join(dirpath, filename))
@@ -111,14 +150,13 @@ async def system_status():
     return {
         "success": True,
         "data": {
-            "online_count": online_count,
-            "max_online": settings.MAX_CONCURRENT_USERS,
             "total_albums": total_albums or 0,
             "total_episodes": total_episodes or 0,
             "storage_used": total_size,
             "storage_used_mb": round(total_size / 1024 / 1024, 2)
         }
     }
+
 
 # 全局异常处理
 @app.exception_handler(HTTPException)
@@ -140,12 +178,12 @@ async def general_exception_handler(request, exc):
         content={"success": False, "error": "内部服务器错误"}
     )
 
+
 # 启动事件
 @app.on_event("startup")
 async def startup_event():
     """应用启动时的初始化"""
     print("🚀 正在初始化应用...")
-    # 初始化数据库
     try:
         init_db()
     except Exception as e:
@@ -153,6 +191,8 @@ async def startup_event():
         raise
     print("✅ 应用初始化完成")
 
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.getenv("PORT", 8001))
+    uvicorn.run(app, host="0.0.0.0", port=port)

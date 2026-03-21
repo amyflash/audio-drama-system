@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status, HTTPException, Query, Form, UploadFile, File
+from fastapi import APIRouter, Depends, status, HTTPException, Query, Form, UploadFile, File, Request
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import os
@@ -7,9 +7,9 @@ import uuid
 from pathlib import Path
 from mutagen import File as MutagenFile
 from app.db.base import get_db
-from app.models.models import Album, Episode, User
+from app.models.models import Album, Episode
 from app.models.schemas import EpisodeCreate, EpisodeUpdate, EpisodeResponse, UploadResponse
-from app.api.deps import get_current_admin, get_current_user, get_stream_auth_user
+from app.api.sso import get_current_user_from_token, require_admin
 from app.core.config import settings
 
 router = APIRouter(prefix="/episodes", tags=["剧集管理"])
@@ -34,11 +34,14 @@ def _episode_to_response(episode: Episode, stream_url: Optional[str] = None) -> 
 
 @router.get("", response_model=dict)
 async def get_episodes(
+    request: Request,
     album_id: int = Query(..., description="专辑ID"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
 ):
     """获取专辑的剧集列表（用户视角）"""
+    # 验证用户
+    get_current_user_from_token(request)
+    
     album = db.query(Album).filter(Album.id == album_id).first()
     if not album:
         raise HTTPException(
@@ -72,10 +75,13 @@ async def get_episodes(
 @router.get("/{episode_id}", response_model=dict)
 async def get_episode_by_id(
     episode_id: int,
+    request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
 ):
     """获取剧集详情（用于播放器）"""
+    # 验证用户
+    get_current_user_from_token(request)
+    
     episode = db.query(Episode).filter(Episode.id == episode_id).first()
     if not episode:
         raise HTTPException(
@@ -96,11 +102,14 @@ async def get_episode_by_id(
 
 @router.get("/admin", response_model=dict)
 async def get_episodes_admin(
+    request: Request,
     album_id: int = Query(..., description="专辑ID"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin)
 ):
     """获取专辑的剧集列表（管理员视角）"""
+    # 验证管理员权限
+    require_admin(request)
+    
     album = db.query(Album).filter(Album.id == album_id).first()
     if not album:
         raise HTTPException(
@@ -133,11 +142,14 @@ async def get_episodes_admin(
 @router.put("/{episode_id}", response_model=EpisodeResponse)
 async def update_episode(
     episode_id: int,
+    request: Request,
     episode_update: EpisodeUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin)
 ):
     """更新剧集"""
+    # 验证管理员权限
+    require_admin(request)
+    
     episode = db.query(Episode).filter(Episode.id == episode_id).first()
     if not episode:
         raise HTTPException(
@@ -159,10 +171,13 @@ async def update_episode(
 @router.delete("/{episode_id}", response_model=dict)
 async def delete_episode(
     episode_id: int,
+    request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin)
 ):
     """删除剧集"""
+    # 验证管理员权限
+    require_admin(request)
+    
     episode = db.query(Episode).filter(Episode.id == episode_id).first()
     if not episode:
         raise HTTPException(
@@ -183,11 +198,14 @@ async def delete_episode(
 @router.post("/{episode_id}/upload", response_model=EpisodeResponse)
 async def upload_episode_file(
     episode_id: int,
+    request: Request,
     file: UploadFile = File(..., description="音频文件"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin)
 ):
     """为已创建的剧集上传音频文件"""
+    # 验证管理员权限
+    require_admin(request)
+    
     episode = db.query(Episode).filter(Episode.id == episode_id).first()
     if not episode:
         raise HTTPException(
@@ -196,7 +214,7 @@ async def upload_episode_file(
         )
 
     # 文件类型校验（放宽要求，允许更多类型）
-    ALLOWED_TYPES = ["audio/mpeg", "audio/mp4", "audio/flac", "audio/x-m4a", 
+    ALLOWED_TYPES = ["audio/mpeg", "audio/mp4", "audio/flac", "audio/x-m4a",
                      "audio/mp3", "audio/x-mp3", "application/octet-stream", ""]
     if file.content_type and file.content_type not in ALLOWED_TYPES:
         # 不阻止上传，只是记录警告

@@ -36,8 +36,8 @@ export default defineNuxtConfig({
   // 运行时配置（环境变量）
   runtimeConfig: {
     public: {
-      // 优先级：Docker 环境变量 > Nuxt 环境变量 > 本地默认地址
-      apiBaseUrl: process.env.API_BASE_URL || process.env.NUXT_PUBLIC_API_BASE_URL || ''
+      // 优先级：环境变量 > 本地默认地址
+      apiBaseUrl: process.env.API_BASE_URL || ''
     }
   },
 
@@ -47,33 +47,31 @@ export default defineNuxtConfig({
     devProxy: {
       // 代理 OpenAPI 文档请求
       '/openapi.json': {
-        target: `${process.env.API_BASE_URL || 'http://backend:8000'}/openapi.json`,
+        target: `${process.env.API_BASE_URL || 'http://localhost:8001'}/openapi.json`,
         changeOrigin: true
       },
       // 代理 Swagger 文档页面
       '/docs': {
-        target: `${process.env.API_BASE_URL || 'http://backend:8000'}/docs`,
+        target: `${process.env.API_BASE_URL || 'http://localhost:8001'}/docs`,
         changeOrigin: true
       },
-      // 代理所有 API 请求 - 目标URL包含/api
+      // 代理所有 API 请求
       '/api/**': {
-        target: `${process.env.API_BASE_URL || 'http://backend:8000'}`,
+        target: `${process.env.API_BASE_URL || 'http://localhost:8001'}`,
         changeOrigin: true
       }
     },
     // 通用路由规则（开发/生产环境均生效）
     routeRules: {
-      // API 接口代理规则 - 目标URL包含/api，确保路径正确
+      // API 接口代理规则
       '/api/**': {
-        proxy: `${process.env.API_BASE_URL || 'http://backend:8000'}`
+        proxy: `${process.env.API_BASE_URL || 'http://localhost:8001'}`
       },
-      // OpenAPI 文档代理规则
       '/openapi.json': {
-        proxy: `${process.env.API_BASE_URL || 'http://backend:8000'}/openapi.json`
+        proxy: `${process.env.API_BASE_URL || 'http://localhost:8001'}/openapi.json`
       },
-      // 文档页面代理规则
       '/docs/**': {
-        proxy: `${process.env.API_BASE_URL || 'http://backend:8000'}/docs/**`
+        proxy: `${process.env.API_BASE_URL || 'http://localhost:8001'}/docs/**`
       }
     }
   }

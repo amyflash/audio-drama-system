@@ -64,12 +64,6 @@ dist/
 .vitest/
 coverage/
 
-# Docker volumes
-db_data/
-media_data/
-redis_data/
-backup_data/
-
 # Temporary files
 tmp/
 temp/

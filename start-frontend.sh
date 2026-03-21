@@ -1,4 +1,7 @@
 #!/bin/bash
-# 本脚本已迁移为启动 Nuxt 前端
-cd /home/duoduo/.openclaw/workspace/audio-drama-system/nuxt-frontend
+# 前端开发服务器（需要后端在 8001 端口运行）
+# API 请求会被代理到 http://localhost:8001
+
+cd "$(dirname "$0")/nuxt-frontend"
+export API_BASE_URL="http://localhost:8001"
 npm run dev

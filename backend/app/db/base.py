@@ -31,29 +31,9 @@ def get_db():
 
 
 def init_db():
-    """初始化数据库表"""
-    from ..models.models import User, Album, Episode, Session
+    """初始化数据库表（仅 Album 和 Episode）"""
+    from ..models.models import Album, Episode
 
     # 创建所有表
     Base.metadata.create_all(bind=engine)
-
-    # 插入默认管理员
-    db = SessionLocal()
-    try:
-        admin = db.query(User).filter(User.username == "admin").first()
-        if not admin:
-            # 使用预计算的bcrypt hash for "123456" 避免passlib初始化问题
-            hashed_password = "$2b$12$tN.2A6HaFzJzwt8TOWqtkOL9QqTis85DCHcpj2Q2nYUaqDatMwRHW"
-
-            admin = User(
-                username="admin",
-                password_hash=hashed_password,
-                role="admin"
-            )
-            db.add(admin)
-            db.commit()
-            print(f"✅ 默认管理员账号已创建: admin / 123456")
-        else:
-            print("✅ 数据库已存在，跳过初始化")
-    finally:
-        db.close()
+    print("✅ 数据库表已创建")

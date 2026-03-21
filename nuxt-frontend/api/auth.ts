@@ -5,13 +5,6 @@ export interface User {
   username: string
   role: string
   is_active: boolean
-  first_name?: string
-  last_name?: string
-}
-
-export interface LoginRequest {
-  username: string
-  password: string
 }
 
 export interface LoginResponse {
@@ -21,14 +14,16 @@ export interface LoginResponse {
   user: User
 }
 
-export const login = (data: LoginRequest) =>
-  api.post<LoginResponse>('/api/auth/login', data)
+// SSO 登录回调
+export const ssoCallback = (token: string, redirectUri: string = '/') =>
+  api.post<LoginResponse>('/api/auth/sso/callback', { token, redirect_uri: redirectUri })
 
-export const logout = () =>
-  api.post('/api/auth/logout')
+// SSO 状态
+export const getSSOStatus = () =>
+  api.get<{ sso_enabled: boolean; local_login_enabled: boolean; jwt_auth_url: string }>('/api/auth/sso/status')
 
-export const heartbeat = () =>
-  api.post('/api/auth/heartbeat')
-
-export const getCurrentUser = () =>
-  api.get<User>('/api/auth/me')
+// 获取 SSO 登录 URL
+export const getSSOLoginUrl = (redirectUri: string) =>
+  api.get<{ login_url: string; callback_url: string }>('/api/auth/sso/login-url', {
+    params: { redirect_uri: redirectUri }
+  })

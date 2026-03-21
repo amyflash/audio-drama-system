@@ -50,47 +50,40 @@
 
         <!-- 音频播放器（仅在有音频文件时显示） -->
         <div v-if="episode && !!streamUrl && episode.duration > 0" class="max-w-2xl mx-auto">
-          <!-- 原生 audio 元素（提供完整控制） -->
+          <!-- 原生 audio 元素 -->
           <audio
             ref="audioPlayer"
             :src="streamUrl"
             class="w-full"
+            style="display: none;"
             @timeupdate="handleTimeUpdate"
             @progress="calculateBuffered"
             @loadedmetadata="handleLoadedMetadata"
-            style="display: none;"
+            @play="isPlaying = true"
+            @pause="isPlaying = false"
           ></audio>
 
           <!-- 自定义播放控制 -->
           <div class="bg-green-950/50 backdrop-blur-sm rounded-2xl p-4 sm:p-6 border border-green-800/50">
             <!-- 进度条区域 -->
             <div class="mb-4">
-              <!-- 时间显示 -->
               <div class="flex justify-between items-center mb-2 text-green-50">
                 <span class="text-lg font-mono">{{ formatTime(currentTime) }}</span>
                 <span class="text-lg font-mono text-green-200/70">/ {{ formatTime(duration) }}</span>
               </div>
-
-              <!-- 进度条 -->
               <div
                 class="w-full h-2 bg-green-800/60 rounded-full cursor-pointer hover:bg-green-700/60 transition-colors relative"
                 @click="handleProgressClick"
               >
-                <!-- 缓冲进度条（灰色） -->
                 <div
                   class="absolute top-0 left-0 h-full bg-gray-500 rounded-full"
                   :style="{ width: bufferedPercentage + '%' }"
                 ></div>
-
-                <!-- 已播放进度 -->
                 <div
                   class="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full relative"
                   :style="{ width: progressPercentage + '%' }"
                 >
-                  <!-- 进度指示点 -->
-                  <div
-                    class="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-lg"
-                  ></div>
+                  <div class="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-lg"></div>
                 </div>
               </div>
               <p class="text-green-300/50 text-xs mt-2">
@@ -100,7 +93,6 @@
 
             <!-- 播放控制按钮 -->
             <div class="flex justify-center items-center gap-6">
-              <!-- 后退 10 秒 -->
               <button
                 @click="seekBy(-10)"
                 class="w-12 h-12 rounded-full bg-green-800 hover:bg-green-700 text-green-50 flex items-center justify-center transition-colors shadow-lg hover:shadow-xl"
@@ -110,7 +102,6 @@
                 </svg>
               </button>
 
-              <!-- 播放/暂停按钮 -->
               <button
                 @click="togglePlay"
                 class="w-16 h-16 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-green-50 flex items-center justify-center transition-all shadow-xl hover:shadow-2xl transform hover:scale-105"
@@ -123,7 +114,6 @@
                 </svg>
               </button>
 
-              <!-- 前进 10 秒 -->
               <button
                 @click="seekBy(10)"
                 class="w-12 h-12 rounded-full bg-green-800 hover:bg-green-700 text-green-50 flex items-center justify-center transition-colors shadow-lg hover:shadow-xl"
@@ -135,7 +125,6 @@
             </div>
           </div>
 
-          <!-- 音频信息（仅在有音频文件时显示） -->
           <div v-if="episode.duration > 0" class="mt-4 sm:mt-6 space-y-1 sm:space-y-2 text-center text-green-200/70 text-sm sm:text-base">
             <p>⏱️ 总时长: {{ formatDuration(episode.duration) }}</p>
             <p class="text-xs sm:text-sm">支持格式: MP3 / OGG / FLAC</p>
@@ -161,7 +150,6 @@ const currentTime = ref(0)
 const duration = ref(0)
 const isPlaying = ref(false)
 const bufferedPercentage = ref(0)
-
 const streamUrl = ref<string>('')
 
 const progressPercentage = computed(() => {
@@ -170,60 +158,53 @@ const progressPercentage = computed(() => {
 })
 
 // 获取播放 token
+// 修复：使用相对路径 /api/... 走 Nuxt 代理，不使用 useRuntimeConfig().public.apiBaseUrl
+// 原因：apiBaseUrl 在客户端可能为空或与代理配置不一致，导致请求绕过代理直接发到后端失败
 const loadStreamUrl = async () => {
-  if (episodeId.value) {
-    try {
-      const token = localStorage.getItem('token')
-      if (token) {
-        // 使用 stream token 接口获取临时播放 token
-        const response = await fetch(
-          `${useRuntimeConfig().public.apiBaseUrl}/api/stream/token/${episodeId.value}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          }
-        )
-        const data = await response.json()
-        if (data.success && data.token) {
-          // 添加 token 参数到 stream URL
-          streamUrl.value = `${$episodeApi.getStreamUrl(episodeId.value)}?token=${data.token}`;
-        } else {
-          // 失败时尝试直接使用（可能需要登录）
-          streamUrl.value = $episodeApi.getStreamUrl(episodeId.value)
-        }
-      } else {
-        // 没有登录
-        streamUrl.value = $episodeApi.getStreamUrl(episodeId.value)
-      }
-    } catch (error) {
-      console.error('获取 stream token 失败', error)
-      streamUrl.value = $episodeApi.getStreamUrl(episodeId.value)
+  if (!episodeId.value) return
+
+  const token = localStorage.getItem('token')
+  if (!token) {
+    // 未登录，直接设置不带 token 的 URL，后端会返回 401
+    streamUrl.value = $episodeApi.getStreamUrl(episodeId.value)
+    return
+  }
+
+  try {
+    const response = await fetch(`/api/stream/token/${episodeId.value}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+
+    if (!response.ok) {
+      console.warn('获取 stream token 失败，状态码:', response.status)
+      // 401 说明 token 过期，axios interceptor 会处理跳转登录
+      // 这里不再 fallback 到无 token URL，避免触发第二次 401
+      return
     }
+
+    const data = await response.json()
+    if (data.success && data.token) {
+      streamUrl.value = `${$episodeApi.getStreamUrl(episodeId.value)}?token=${data.token}`
+    }
+  } catch (error) {
+    console.error('获取 stream token 失败', error)
   }
 }
 
-// 计算缓冲百分比
 const calculateBuffered = () => {
   if (!audioPlayer.value || !duration.value) {
     bufferedPercentage.value = 0
     return
   }
-
   const buffered = audioPlayer.value.buffered
   if (buffered.length === 0) {
     bufferedPercentage.value = 0
     return
   }
-
-  // 获取已缓冲的最大时间
   let bufferedEnd = 0
   for (let i = 0; i < buffered.length; i++) {
-    if (buffered.end(i) > bufferedEnd) {
-      bufferedEnd = buffered.end(i)
-    }
+    if (buffered.end(i) > bufferedEnd) bufferedEnd = buffered.end(i)
   }
-
   bufferedPercentage.value = (bufferedEnd / duration.value) * 100
 }
 
@@ -231,79 +212,64 @@ const loadEpisode = async () => {
   try {
     const response = await $episodeApi.get(episodeId.value)
     episode.value = response.data
-    // 加载 stream URL
     await loadStreamUrl()
   } catch (error) {
     console.error('加载单集失败', error)
-    loading.value = false
   } finally {
     loading.value = false
   }
 }
 
 const handleTimeUpdate = () => {
-  if (audioPlayer.value) {
-    currentTime.value = audioPlayer.value.currentTime
-    // 计算缓冲进度
-    calculateBuffered()
-    // 保存播放进度（每5秒保存一次，减少写入频率）
-    const saveTime = Math.floor(currentTime.value)
-    const lastSave = parseInt(localStorage.getItem(`playback-time-${episodeId.value}`) || '0')
-    if (saveTime - lastSave >= 5) {
-      localStorage.setItem(`playback-pos-${episodeId.value}`, saveTime.toString())
-      localStorage.setItem(`playback-time-${episodeId.value}`, Date.now().toString())
-    }
+  if (!audioPlayer.value) return
+  currentTime.value = audioPlayer.value.currentTime
+  calculateBuffered()
+  // 每 5 秒保存一次播放进度
+  const saveTime = Math.floor(currentTime.value)
+  const lastSave = parseInt(localStorage.getItem(`playback-time-${episodeId.value}`) || '0')
+  if (saveTime - lastSave >= 5) {
+    localStorage.setItem(`playback-pos-${episodeId.value}`, saveTime.toString())
+    localStorage.setItem(`playback-time-${episodeId.value}`, Date.now().toString())
   }
 }
 
 const handleLoadedMetadata = () => {
-  if (audioPlayer.value) {
-    duration.value = audioPlayer.value.duration
-
-    // 计算缓冲进度
-    calculateBuffered()
-
-    // 恢复播放进度
-    const savedPos = localStorage.getItem(`playback-pos-${episodeId.value}`)
-    if (savedPos) {
-      audioPlayer.value.currentTime = parseFloat(savedPos)
-      currentTime.value = parseFloat(savedPos)
-    }
+  if (!audioPlayer.value) return
+  duration.value = audioPlayer.value.duration
+  calculateBuffered()
+  const savedPos = localStorage.getItem(`playback-pos-${episodeId.value}`)
+  if (savedPos) {
+    audioPlayer.value.currentTime = parseFloat(savedPos)
+    currentTime.value = parseFloat(savedPos)
   }
 }
 
 const togglePlay = () => {
   if (!audioPlayer.value) return
-
-  if (isPlaying.value) {
-    audioPlayer.value.pause()
-  } else {
-    audioPlayer.value.play()
-  }
-  isPlaying.value = !isPlaying.value
+  isPlaying.value ? audioPlayer.value.pause() : audioPlayer.value.play()
 }
 
 const seekBy = (seconds: number) => {
   if (!audioPlayer.value) return
-  const newTime = Math.max(0, Math.min(audioPlayer.value.currentTime + seconds, audioPlayer.value.duration))
-  audioPlayer.value.currentTime = newTime
+  audioPlayer.value.currentTime = Math.max(
+    0,
+    Math.min(audioPlayer.value.currentTime + seconds, audioPlayer.value.duration)
+  )
 }
 
 const handleProgressClick = (event: MouseEvent) => {
   if (!audioPlayer.value) return
-  const progressBar = event.currentTarget as HTMLElement
-  const rect = progressBar.getBoundingClientRect()
-  const clickPosition = event.clientX - rect.left
-  const percentage = clickPosition / rect.width
-  const newTime = percentage * audioPlayer.value.duration
-  audioPlayer.value.currentTime = newTime
+  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+  const percentage = (event.clientX - rect.left) / rect.width
+  audioPlayer.value.currentTime = percentage * audioPlayer.value.duration
 }
 
-// 页面离开时保存当前位置
 const saveProgressBeforeLeave = () => {
   if (audioPlayer.value) {
-    localStorage.setItem(`playback-pos-${episodeId.value}`,
-      Math.floor(audioPlayer.value.currentTime).toString())
+    localStorage.setItem(
+      `playback-pos-${episodeId.value}`,
+      Math.floor(audioPlayer.value.currentTime).toString()
+    )
   }
 }
 
@@ -316,52 +282,28 @@ const formatTime = (seconds: number) => {
 
 const formatDuration = (seconds: number) => {
   if (!seconds || !isFinite(seconds)) return '未知'
-  const mins = Math.floor(seconds / 60)
-  const secs = Math.floor(seconds % 60)
-  return `${mins}分${secs}秒`
-}
-
-// 监听播放状态
-const handlePlay = () => {
-  isPlaying.value = true
-}
-
-const handlePause = () => {
-  isPlaying.value = false
+  return `${Math.floor(seconds / 60)}分${Math.floor(seconds % 60)}秒`
 }
 
 onMounted(() => {
   loadEpisode()
   window.addEventListener('beforeunload', saveProgressBeforeLeave)
-
-  // 监听音频播放状态
-  if (audioPlayer.value) {
-    audioPlayer.value.addEventListener('play', handlePlay)
-    audioPlayer.value.addEventListener('pause', handlePause)
-    audioPlayer.value.addEventListener('progress', calculateBuffered)
-  }
+  // 修复：play/pause 事件改为在 template 上用 @play @pause 绑定
+  // 原因：onMounted 时 v-if="!!streamUrl" 为 false，audioPlayer ref 还是 null，
+  //       addEventListener 绑不上去，isPlaying 状态永远不会更新
 })
 
 onUnmounted(() => {
   saveProgressBeforeLeave()
   window.removeEventListener('beforeunload', saveProgressBeforeLeave)
-
-  if (audioPlayer.value) {
-    audioPlayer.value.removeEventListener('play', handlePlay)
-    audioPlayer.value.removeEventListener('pause', handlePause)
-    audioPlayer.value.removeEventListener('progress', calculateBuffered)
-    audioPlayer.value.pause()
-  }
+  if (audioPlayer.value) audioPlayer.value.pause()
 })
 </script>
 
 <style scoped>
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
-
 .animate-spin {
   animation: spin 1s linear infinite;
 }

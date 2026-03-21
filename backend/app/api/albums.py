@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status, HTTPException, Query, Form, UploadFile, File
+from fastapi import APIRouter, Depends, status, HTTPException, Query, Form, UploadFile, File, Request
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import os
@@ -7,19 +7,19 @@ import uuid
 from pathlib import Path
 from mutagen import File as MutagenFile
 from app.db.base import get_db
-from app.models.models import Album, Episode, User
+from app.models.models import Album, Episode
 from app.models.schemas import (
     AlbumCreate, AlbumUpdate, AlbumResponse,
     AlbumsListResponse, EpisodeCreate, EpisodeResponse, EpisodeUpdate
 )
-from app.api.deps import get_current_admin, get_current_user
+from app.api.sso import get_current_user_from_token, require_admin
 from app.core.config import settings
 
 router = APIRouter(prefix="/albums", tags=["专辑管理"])
 
 
 # 默认封面图（Base64编码的SVG）
-DEFAULT_COVER = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yIiMzYfGQ3OTUiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiM3YzNhZWQiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0id2hpdGUiIGZvbnQtc2l6ZT0iNDBweCIgZm9udC1mYW1pbHk9IkFyaWFsIj7lha3lia88L3RleHQ+PC9zdmc+'
+DEFAULT_COVER = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiMzYfGQ3OTUiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiM3YzNhZWQiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0id2hpdGUiIGZvbnQtc2l6ZT0iNDBweCIgZm9udC1mYW1pbHk9IkFyaWFsIj7lha3lia88L3RleHQ+PC9zdmc+'
 
 
 def _album_to_response(album: Album) -> AlbumResponse:
@@ -38,12 +38,15 @@ def _album_to_response(album: Album) -> AlbumResponse:
 
 @router.get("", response_model=AlbumsListResponse)
 async def get_albums(
+    request: Request,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
 ):
     """获取专辑列表（分页）"""
+    # 验证用户
+    get_current_user_from_token(request)
+    
     # 计算总数
     total = db.query(Album).count()
 
@@ -65,11 +68,14 @@ async def get_albums(
 
 @router.post("", response_model=AlbumResponse, status_code=status.HTTP_201_CREATED)
 async def create_album(
+    request: Request,
     album_data: AlbumCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin)
 ):
     """创建专辑"""
+    # 验证管理员权限
+    require_admin(request)
+    
     album = Album(
         title=album_data.title,
         cover_image=album_data.cover_image or DEFAULT_COVER,
@@ -86,10 +92,13 @@ async def create_album(
 @router.get("/{album_id}", response_model=AlbumResponse)
 async def get_album(
     album_id: int,
+    request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
 ):
     """获取专辑详情"""
+    # 验证用户
+    get_current_user_from_token(request)
+    
     album = db.query(Album).filter(Album.id == album_id).first()
     if not album:
         raise HTTPException(
@@ -103,11 +112,14 @@ async def get_album(
 @router.put("/{album_id}", response_model=AlbumResponse)
 async def update_album(
     album_id: int,
+    request: Request,
     album_update: AlbumUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin)
 ):
     """更新专辑"""
+    # 验证管理员权限
+    require_admin(request)
+    
     album = db.query(Album).filter(Album.id == album_id).first()
     if not album:
         raise HTTPException(
@@ -129,10 +141,13 @@ async def update_album(
 @router.delete("/{album_id}", response_model=dict)
 async def delete_album(
     album_id: int,
+    request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin)
 ):
     """删除专辑（级联删除所有剧集）"""
+    # 验证管理员权限
+    require_admin(request)
+    
     album = db.query(Album).filter(Album.id == album_id).first()
     if not album:
         raise HTTPException(
@@ -157,13 +172,16 @@ MEDIA_DIR = "/media/albums"
 @router.get("/{album_id}/episodes", response_model=dict)
 async def get_album_episodes(
     album_id: int,
+    request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
     page: int = Query(1, ge=1),
     page_size: int = Query(100, ge=1, le=500),
     fields: Optional[str] = Query(None, description="返回字段: id,title,duration,created_at")
 ):
     """获取专辑的剧集列表（分页，支持字段过滤）"""
+    # 验证用户
+    get_current_user_from_token(request)
+    
     album = db.query(Album).filter(Album.id == album_id).first()
     if not album:
         raise HTTPException(
@@ -206,11 +224,14 @@ async def get_album_episodes(
 @router.post("/{album_id}/episodes", response_model=EpisodeResponse, status_code=status.HTTP_201_CREATED)
 async def create_episode(
     album_id: int,
+    request: Request,
     episode_data: EpisodeCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin)
 ):
     """创建剧集（不含音频文件）"""
+    # 验证管理员权限
+    require_admin(request)
+    
     album = db.query(Album).filter(Album.id == album_id).first()
     if not album:
         raise HTTPException(
@@ -241,11 +262,14 @@ async def create_episode(
 @router.post("/{album_id}/episodes/batch-upload", response_model=dict)
 async def batch_upload_episodes(
     album_id: int,
+    request: Request,
     files: list[UploadFile] = File(..., description="音频文件列表"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin)
 ):
     """批量上传音频文件到专辑"""
+    # 验证管理员权限
+    require_admin(request)
+    
     album = db.query(Album).filter(Album.id == album_id).first()
     if not album:
         raise HTTPException(

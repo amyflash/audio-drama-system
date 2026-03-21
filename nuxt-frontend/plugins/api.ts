@@ -38,24 +38,17 @@ export default defineNuxtPlugin((nuxtApp) => {
     }
   )
 
-  // Auth API
+  // Auth API (SSO)
   const authApi = {
-    login: (data: {username: string, password: string}) =>
-      api.post('/api/auth/login', data),
-    logout: () =>
-      api.post('/api/auth/logout'),
-    heartbeat: () =>
-      api.post('/api/auth/heartbeat'),
-    getCurrentUser: () =>
-      api.get('/api/auth/me'),
-    getUsers: () =>
-      api.get('/api/admin/users'),
-    createUser: (data: any) =>
-      api.post('/api/admin/users', data),
-    updateUser: (id: number, data: any) =>
-      api.put(`/api/admin/users/${id}`, data),
-    deleteUser: (id: number) =>
-      api.delete(`/api/admin/users/${id}`)
+    // SSO 回调
+    ssoCallback: (token: string, redirectUri: string = '/') =>
+      api.post('/api/auth/sso/callback', { token, redirect_uri: redirectUri }),
+    // SSO 状态
+    getSSOStatus: () =>
+      api.get('/api/auth/sso/status'),
+    // 获取 SSO 登录 URL
+    getSSOLoginUrl: (redirectUri: string) =>
+      api.get('/api/auth/sso/login-url', { params: { redirect_uri: redirectUri } })
   }
 
   // Album API
