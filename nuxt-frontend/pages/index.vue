@@ -399,11 +399,34 @@ const showToast = (message: string, type: 'success' | 'error' | 'warning' = 'inf
 const loadAlbums = async () => {
   loading.value = true
   try {
+    // 调试：检查 token 是否存在
+    const token = import.meta.client ? localStorage.getItem('token') : null
+    const user = import.meta.client ? localStorage.getItem('user') : null
+    console.log('当前 token:', token ? '存在' : '不存在')
+    console.log('当前 user:', user)
+
     const response = await $albumApi.list()
     albums.value = response.data.items
     filteredAlbums.value = response.data.items
-  } catch (error) {
-    showToast('加载专辑失败', 'error')
+  } catch (error: any) {
+    const errorMsg = error?.response?.data?.error || error?.message || '加载专辑失败'
+    const status = error?.response?.status
+    const detail = error?.response?.data?.detail
+    console.error('加载专辑失败:', error)
+    console.error('响应数据:', error?.response?.data)
+    console.error('Detail:', detail)
+    if (status === 401) {
+      showToast('登录已过期，请重新登录', 'error')
+      setTimeout(() => navigateTo('/login'), 1500)
+    } else if (status === 403) {
+      showToast('无权访问，请联系管理员', 'error')
+    } else if (detail) {
+      // 显示 422 验证错误的详细信息
+      const messages = Array.isArray(detail) ? detail.map((d: any) => d.msg).join(', ') : String(detail)
+      showToast('请求验证失败：' + messages, 'error')
+    } else {
+      showToast(errorMsg, 'error')
+    }
   } finally {
     loading.value = false
   }

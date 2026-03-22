@@ -1,23 +1,47 @@
 import os
-from fastapi import FastAPI, HTTPException, Request, status
+import sys
+
+# 添加 shared 目录到 Python 路径，以便导入 sso_client
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "shared"))
+
+from fastapi import FastAPI, HTTPException, Request, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import FileResponse
 from sqlalchemy.orm import Session
+from sso_client import create_sso_router
 from app.db.base import get_db, init_db
 from app.core.config import settings
-from app.api import albums, episodes, upload, stream, sso
+from app.api import albums, episodes, upload, stream
 
-# 创建FastAPI应用
+# 创建 SSO 客户端（使用与 jwt-auth 共享的密钥）
+sso = create_sso_router(
+    secret_key=settings.SSO_SECRET_KEY,
+    jwt_auth_url=settings.SSO_JWT_AUTH_URL,
+    jwt_expire_seconds=settings.JWT_EXPIRE_SECONDS,
+    algorithm=settings.SSO_ALGORITHM,
+    sso_enabled=settings.SSO_ENABLED,
+)
+
+# 创建 FastAPI 应用
 app = FastAPI(
-    title="极简广播剧管理系统API",
-    description="极简广播剧管理与在线收听系统的后端API",
+    title="极简广播剧管理系统 API",
+    description="极简广播剧管理与在线收听系统的后端 API",
     version="1.0.0"
 )
 
-# CORS中间件
+# 创建 SSO 客户端（使用与 jwt-auth 共享的密钥）
+sso = create_sso_router(
+    secret_key=settings.SSO_SECRET_KEY,
+    jwt_auth_url=settings.SSO_JWT_AUTH_URL,
+    jwt_expire_seconds=settings.JWT_EXPIRE_SECONDS,
+    algorithm=settings.SSO_ALGORITHM,
+    sso_enabled=settings.SSO_ENABLED,
+)
+
+# CORS 中间件
 # 从环境变量读取允许的域名，支持多个域名用逗号分隔
 allow_origins_str = os.getenv("ALLOW_ORIGINS", "")
 if allow_origins_str:
@@ -41,7 +65,7 @@ app.include_router(episodes.router, prefix="/api/admin")
 app.include_router(upload.router, prefix="/api/admin")
 app.include_router(stream.router, prefix="/api")
 
-# 静态文件服务（SPA前端）- 使用中间件方式，避免覆盖API路由
+# 静态文件服务（SPA 前端）- 使用中间件方式，避免覆盖 API 路由
 static_dir = os.path.join(os.path.dirname(__file__), "..", "static")
 
 class SPAMiddleware(BaseHTTPMiddleware):
@@ -72,9 +96,9 @@ class SPAMiddleware(BaseHTTPMiddleware):
 
 if os.path.exists(static_dir):
     app.add_middleware(SPAMiddleware)
-    print(f"✅ 已添加 SPA 中间件，静态目录: {static_dir}")
+    print(f"✅ 已添加 SPA 中间件，静态目录：{static_dir}")
 else:
-    print(f"⚠️  静态文件目录不存在: {static_dir}，前端将不可用")
+    print(f"⚠️  静态文件目录不存在：{static_dir}，前端将不可用")
 
 
 # 健康检查
@@ -90,7 +114,7 @@ async def health_check():
 
 # 在线人数查询（使用 JWT token 验证）
 @app.get("/api/online")
-async def get_online_count(request: Request):  # FIX: Request 现已正确导入
+async def get_online_count(request: Request):
     """获取当前在线人数（需要认证）"""
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Bearer "):
@@ -112,7 +136,7 @@ async def get_online_count(request: Request):  # FIX: Request 现已正确导入
 
 # 系统状态（使用 JWT token 验证）
 @app.get("/api/system/status")
-async def system_status(request: Request):  # FIX: Request 现已正确导入
+async def system_status(request: Request, db: Session = Depends(get_db)):
     """系统状态（需要认证）"""
     from sqlalchemy import func
     from app.models.models import Album, Episode
@@ -128,13 +152,9 @@ async def system_status(request: Request):  # FIX: Request 现已正确导入
             }
         }
 
-    # FIX: 使用 contextmanager 方式，确保异常时连接也会释放
-    db: Session = next(get_db())
-    try:
-        total_albums = db.query(func.count(Album.id)).scalar()
-        total_episodes = db.query(func.count(Episode.id)).scalar()
-    finally:
-        db.close()
+    # 使用 contextmanager 方式，确保异常时连接也会释放
+    total_albums = db.query(func.count(Album.id)).scalar()
+    total_episodes = db.query(func.count(Episode.id)).scalar()
 
     # 存储空间
     media_dir = os.path.abspath(settings.MEDIA_DIR)
@@ -161,7 +181,7 @@ async def system_status(request: Request):  # FIX: Request 现已正确导入
 # 全局异常处理
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request, exc):
-    """HTTP异常处理"""
+    """HTTP 异常处理"""
     return JSONResponse(
         status_code=exc.status_code,
         content={"success": False, "error": exc.detail}
@@ -172,7 +192,7 @@ async def general_exception_handler(request, exc):
     """通用异常处理"""
     import traceback
     error_detail = traceback.format_exc()
-    print(f"未捕获的异常: {error_detail}")
+    print(f"未捕获的异常：{error_detail}")
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"success": False, "error": "内部服务器错误"}
@@ -187,7 +207,7 @@ async def startup_event():
     try:
         init_db()
     except Exception as e:
-        print(f"❌ 数据库初始化失败: {e}")
+        print(f"❌ 数据库初始化失败：{e}")
         raise
     print("✅ 应用初始化完成")
 

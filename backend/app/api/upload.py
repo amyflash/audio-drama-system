@@ -1,4 +1,10 @@
-from fastapi import APIRouter, Depends, status, HTTPException, Form, UploadFile, File, Request
+import os
+import sys
+
+# 添加 shared 目录到 Python 路径，以便导入 sso_client
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "shared"))
+
+from fastapi import APIRouter, Depends, status, HTTPException, Form, UploadFile, File
 from sqlalchemy.orm import Session
 import os
 import sys
@@ -7,7 +13,7 @@ from mutagen import File as MutagenFile
 from app.db.base import get_db
 from app.models.models import Album, Episode
 from app.models.schemas import UploadResponse
-from app.api.sso import require_admin
+from sso_client import UserInfo, require_admin
 import uuid
 from pathlib import Path
 from app.core.config import settings
@@ -88,15 +94,12 @@ def get_audio_duration(file_path: Path, file_size: int) -> int:
 
 @router.post("/batch", response_model=UploadResponse)
 async def batch_upload(
-    request: Request,
-    album_id: int = Form(..., description="专辑ID"),
+    album_id: int = Form(..., description="专辑 ID"),
     files: list[UploadFile] = File(..., description="音频文件列表"),
     db: Session = Depends(get_db),
+    user: UserInfo = Depends(require_admin),
 ):
     """批量上传音频文件到指定专辑"""
-    # 验证管理员权限
-    require_admin(request)
-
     # 验证专辑是否存在
     album = db.query(Album).filter(Album.id == album_id).first()
     if not album:
@@ -113,7 +116,7 @@ async def batch_upload(
         if upload_file.content_type not in ALLOWED_TYPES:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"不支持的文件类型: {upload_file.content_type}（仅支持MP3、M4A、FLAC）"
+                detail=f"不支持的文件类型：{upload_file.content_type}（仅支持 MP3、M4A、FLAC）"
             )
 
         # 2. 读取文件内容并校验大小
@@ -123,13 +126,13 @@ async def batch_upload(
         if file_size == 0:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"文件为空: {upload_file.filename}"
+                detail=f"文件为空：{upload_file.filename}"
             )
 
         if file_size > MAX_FILE_SIZE:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"文件大小超过限制（最大100MB）: {upload_file.filename}"
+                detail=f"文件大小超过限制（最大 100MB）: {upload_file.filename}"
             )
 
         # 3. 生成安全文件名（UUID + 原始扩展名）
@@ -188,5 +191,3 @@ async def batch_upload(
         count=len(uploaded_episodes),
         episodes=episodes_response,
     )
-
-

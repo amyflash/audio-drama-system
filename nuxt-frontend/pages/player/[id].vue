@@ -171,7 +171,19 @@ const loadStreamUrl = async () => {
   }
 
   try {
-    const response = await fetch(`/api/stream/token/${episodeId.value}`, {
+    // 获取用户信息添加到查询参数
+    const userStr = localStorage.getItem('user')
+    const user = userStr ? JSON.parse(userStr) : null
+
+    const url = `/api/stream/token/${episodeId.value}`
+    const params = new URLSearchParams()
+    if (user) {
+      params.append('id', user.id)
+      params.append('username', user.username)
+      params.append('role', user.role)
+    }
+
+    const response = await fetch(`${url}?${params.toString()}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
 

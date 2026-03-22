@@ -1,3 +1,9 @@
+import os
+import sys
+
+# 添加 shared 目录到 Python 路径，以便导入 sso_client
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "shared"))
+
 """
 音频流路由
 支持两种认证方式：
@@ -14,7 +20,7 @@ from jose import JWTError, jwt
 
 from app.db.base import get_db
 from app.models.models import Episode
-from app.api.sso import get_current_user_from_token
+from sso_client import UserInfo, get_current_user
 from app.core.config import settings
 
 router = APIRouter(prefix="/stream", tags=["音频流"])
@@ -103,12 +109,11 @@ def resolve_file_path(file_path: str) -> Path:
 # ---------------------------------------------------------------------------
 
 @router.get("/token/{episode_id}")
-async def get_stream_token(episode_id: int, request: Request):
+async def get_stream_token(episode_id: int, user: UserInfo = Depends(get_current_user)):
     """
     获取音频流专用 Token。
     未登录直接返回 401，前端应引导用户登录。
     """
-    user = get_current_user_from_token(request)  # 失败自动抛 401
     token = generate_stream_token(user.id, episode_id)
     return {
         "success": True,
@@ -160,7 +165,7 @@ async def stream_audio(
     if not file_path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"音频文件丢失: {episode.file_path}",
+            detail=f"音频文件丢失：{episode.file_path}",
         )
 
     file_size = file_path.stat().st_size

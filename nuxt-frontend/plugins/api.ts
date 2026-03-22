@@ -13,13 +13,27 @@ export default defineNuxtPlugin((nuxtApp) => {
     }
   })
 
-  // Request interceptor to add token
+  // Request interceptor to add token and user info
   api.interceptors.request.use((config) => {
     // 在服务端不访问 localStorage
     if (import.meta.client) {
       const token = localStorage.getItem('token')
+      const userStr = localStorage.getItem('user')
       if (token) {
         config.headers.Authorization = `Bearer ${token}`
+      }
+      // SSO 客户端需要从查询参数获取用户信息
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr)
+          // 将用户信息添加到查询参数
+          config.params = config.params || {}
+          config.params.id = user.id
+          config.params.username = user.username
+          config.params.role = user.role
+        } catch (e) {
+          console.error('解析用户信息失败:', e)
+        }
       }
     }
     return config
