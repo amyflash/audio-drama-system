@@ -1,9 +1,5 @@
 import os
 import sys
-
-# 添加 shared 目录到 Python 路径，以便导入 sso_client
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "shared"))
-
 """
 音频流路由
 支持两种认证方式：
@@ -13,7 +9,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "sh
 from fastapi import APIRouter, Depends, status, HTTPException, Request
 from fastapi.responses import Response, FileResponse
 from sqlalchemy.orm import Session
-import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 from jose import JWTError, jwt

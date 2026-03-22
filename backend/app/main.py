@@ -1,9 +1,4 @@
 import os
-import sys
-
-# 添加 shared 目录到 Python 路径，以便导入 sso_client
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "shared"))
-
 from fastapi import FastAPI, HTTPException, Request, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
