@@ -43,35 +43,37 @@ export default defineNuxtConfig({
 
   // Nitro 服务器配置（代理、路由规则）
   nitro: {
-    // 开发环境代理（仅开发模式生效）
-    devProxy: {
-      // 代理 OpenAPI 文档请求
-      '/openapi.json': {
-        target: `${process.env.API_BASE_URL || 'http://localhost:8001'}/openapi.json`,
-        changeOrigin: true
-      },
-      // 代理 Swagger 文档页面
-      '/docs': {
-        target: `${process.env.API_BASE_URL || 'http://localhost:8001'}/docs`,
-        changeOrigin: true
-      },
-      // 代理所有 API 请求
-      '/api/**': {
-        target: `${process.env.API_BASE_URL || 'http://localhost:8001'}`,
-        changeOrigin: true
+    // 获取后端API地址 - 统一配置源
+    $development: {
+      // 开发环境：代理所有请求到后端
+      devProxy: {
+        '/api/**': {
+          target: process.env.API_BASE_URL || 'http://localhost:8001',
+          changeOrigin: true,
+          prependPath: true
+        },
+        '/docs/**': {
+          target: process.env.API_BASE_URL || 'http://localhost:8001',
+          changeOrigin: true
+        },
+        '/openapi.json': {
+          target: process.env.API_BASE_URL || 'http://localhost:8001',
+          changeOrigin: true
+        }
       }
     },
-    // 通用路由规则（开发/生产环境均生效）
+    // 生产环境路由规则
     routeRules: {
-      // API 接口代理规则
+      // API 接口 - 生产环境后端直接serving
       '/api/**': {
-        proxy: `${process.env.API_BASE_URL || 'http://localhost:8001'}`
+        proxy: process.env.API_BASE_URL ? `${process.env.API_BASE_URL}/api/**` : undefined
+      },
+      // 文档接口
+      '/docs/**': {
+        proxy: process.env.API_BASE_URL ? `${process.env.API_BASE_URL}/docs/**` : undefined
       },
       '/openapi.json': {
-        proxy: `${process.env.API_BASE_URL || 'http://localhost:8001'}/openapi.json`
-      },
-      '/docs/**': {
-        proxy: `${process.env.API_BASE_URL || 'http://localhost:8001'}/docs/**`
+        proxy: process.env.API_BASE_URL ? `${process.env.API_BASE_URL}/openapi.json` : undefined
       }
     }
   }

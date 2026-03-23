@@ -36,22 +36,50 @@ sso = create_sso_router(
     sso_enabled=settings.SSO_ENABLED,
 )
 
-# CORS 中间件
-# 从环境变量读取允许的域名，支持多个域名用逗号分隔
-allow_origins_str = os.getenv("ALLOW_ORIGINS", "")
-if allow_origins_str:
-    allow_origins = [origin.strip() for origin in allow_origins_str.split(",")]
-else:
-    # 默认允许所有来源（便于快速部署，生产环境建议指定域名）
-    allow_origins = ["*"]
+# CORS 中间件 - 智能配置
+# 根据环境智能选择CORS策略
+import os
+from urllib.parse import urlparse
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=allow_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+def get_cors_config():
+    """获取CORS配置 - 支持多种场景"""
+    env = os.getenv("ENV", "development").lower()
+    origins_str = os.getenv("ALLOW_ORIGINS", "")
+    
+    # 策略1: 明确指定来源 (推荐生产环境)
+    if origins_str:
+        allow_origins = [origin.strip() for origin in origins_str.split(",")]
+        print(f"✅ CORS 已配置明确域名: {allow_origins}")
+        return allow_origins
+    
+    # 策略2: 开发环境 - 仅允许本地前端
+    if env == "development":
+        allow_origins = [
+            "http://localhost:5173",      # Nuxt dev server
+            "http://127.0.0.1:5173",
+            "http://localhost:3000",      # 备选端口
+            "http://127.0.0.1:3000",
+        ]
+        print(f"✅ CORS 已配置开发环境: {allow_origins}")
+        return allow_origins
+    
+    # 策略3: 生产环境 - 同域部署（前端已集成到后端）
+    # 此时无需CORS，因为都来自同一域名
+    print("✅ CORS 已禁用: 生产环境同域部署模式")
+    return []  # 空列表 = 仅允许同域
+
+cors_config = get_cors_config()
+
+if cors_config:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=cors_config,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+        allow_headers=["*"],
+        expose_headers=["Content-Disposition"],  # 下载文件时暴露headers
+        max_age=3600,  # preflight缓存1小时
+    )
 
 # 注册路由
 app.include_router(sso.router, prefix="/api")
