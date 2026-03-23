@@ -68,9 +68,6 @@ export const update = (id: number, data: Partial<EpisodeCreate>) =>
 export const remove = (id: number) =>
   api.delete(`/api/admin/episodes/${id}`)
 
-// 别名方法，保持与其他 API 一致
-export const delete = (id: number) =>
-  api.delete(`/api/admin/episodes/${id}`)
-
+// 获取流媒体 URL
 export const getStreamUrl = (id: number, baseURL?: string) =>
   `${baseURL || ''}/api/stream/${id}`

@@ -1,25 +1,27 @@
 {
-  "name": "nuxt-frontend",
-  "version": "0.0.0",
+  "name": "audio-drama-vue-frontend",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "nuxt dev",
-    "build": "nuxt build",
-    "generate": "nuxt generate",
-    "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "dev": "vite",
+    "build": "vue-tsc && vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
-    "@nuxtjs/tailwindcss": "^6.12.1",
-    "@pinia/nuxt": "^0.5.5",
     "axios": "^1.13.6",
-    "nuxt": "^3.10.3",
     "pinia": "^2.3.0",
-    "vue": "^3.5.29"
+    "vue": "^3.5.29",
+    "vue-router": "^4.5.0"
   },
   "devDependencies": {
     "@types/node": "^24.10.13",
-    "typescript": "~5.9.3"
+    "@vitejs/plugin-vue": "^5.2.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.0",
+    "tailwindcss": "^3.4.17",
+    "typescript": "~5.9.3",
+    "vite": "^6.0.0",
+    "vue-tsc": "^2.2.0"
   }
 }

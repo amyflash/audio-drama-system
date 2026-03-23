@@ -1,20 +1,19 @@
-import axios from 'axios'
+import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios'
+import { useUserStore } from '@/stores/user'
 
 /**
  * API 客户端配置
- * 
- * 开发环境: 使用相对路径，Nuxt代理转发到后端 (无跨域)
- * 生产环境: 使用相对路径，后端直接serving (同域)
+ *
+ * 开发环境：使用相对路径，Vite 代理转发到后端 (无跨域)
+ * 生产环境：使用相对路径，后端直接 serving (同域)
  */
-const baseURL = ""
-
-const api = axios.create({
-  baseURL,
+const api: AxiosInstance = axios.create({
+  baseURL: '',
   headers: {
     'Content-Type': 'application/json'
   },
-  timeout: 30000,  // 30秒超时
-  withCredentials: true  // 允许跨域时发送cookies
+  timeout: 30000,
+  withCredentials: true
 })
 
 /**
@@ -22,19 +21,34 @@ const api = axios.create({
  */
 api.interceptors.request.use(
   (config) => {
-    // 客户端才能访问 localStorage (避免SSR错误)
+    // 客户端才能访问 localStorage
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('token')
       if (token) {
         config.headers.Authorization = `Bearer ${token}`
       }
+
+      // SSO 客户端需要从查询参数获取用户信息
+      const userStr = localStorage.getItem('user')
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr)
+          // 将用户信息添加到查询参数
+          config.params = config.params || {}
+          config.params.id = user.id
+          config.params.username = user.username
+          config.params.role = user.role
+        } catch (e) {
+          console.error('解析用户信息失败:', e)
+        }
+      }
     }
-    
+
     // 调试日志 (仅开发环境)
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.debug(`[API] ${config.method?.toUpperCase()} ${config.url}`)
     }
-    
+
     return config
   },
   (error) => Promise.reject(error)
@@ -45,8 +59,7 @@ api.interceptors.request.use(
  */
 api.interceptors.response.use(
   (response) => {
-    // 调试日志 (仅开发环境)
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.debug(`[API] Response: ${response.status}`)
     }
     return response
@@ -57,14 +70,14 @@ api.interceptors.response.use(
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token')
         localStorage.removeItem('user')
-        // 使用Nuxt路由而不是直接location.href
+        // 使用路由跳转而不是直接 location.href
         window.location.href = '/login'
       }
     }
-    
+
     // 错误日志
     console.error(`[API] Error: ${error.response?.status} - ${error.message}`)
-    
+
     return Promise.reject(error)
   }
 )

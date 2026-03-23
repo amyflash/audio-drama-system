@@ -36,6 +36,5 @@ export const create = (data: AlbumCreate) =>
 export const update = (id: number, data: Partial<AlbumCreate>) =>
   api.put<Album>(`/api/admin/albums/${id}`, data)
 
-// 'delete' 是保留关键字，统一用 remove；调用方改为 albumApi.remove(id)
 export const remove = (id: number) =>
   api.delete(`/api/admin/albums/${id}`)

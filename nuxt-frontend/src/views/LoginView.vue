@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-emerald-100 flex items-center justify-center p-4">
     <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-emerald-100">
-      <!-- 顶部装饰：绿色护眼风 -->
+      <!-- 顶部装饰 -->
       <div class="bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-700 p-6 sm:p-8 text-center">
         <div class="text-6xl sm:text-7xl mb-3 sm:mb-4">🌿</div>
         <h1 class="text-xl sm:text-3xl font-bold text-emerald-50 mb-1 sm:mb-2">极简广播剧</h1>
@@ -51,6 +51,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+
+const router = useRouter()
+const userStore = useUserStore()
 
 const loading = ref(false)
 const ssoLoading = ref(false)
@@ -62,28 +67,71 @@ const handleSSOLogin = async () => {
   error.value = ''
 
   try {
-    const response = await $fetch('/api/auth/sso/login-url', {
-      params: {
-        // FIX: 登录成功后由后端 HTML 回调页跳转到首页
-        // 不能用 window.location.href（那是登录页自身），要明确指定目标页
-        redirect_uri: window.location.origin + '/'
-      }
-    })
-    window.location.href = response.login_url
+    const redirectUri = window.location.origin + '/'
+    await userStore.ssoLogin(redirectUri)
   } catch (e: any) {
     error.value = '获取登录地址失败，请稍后重试'
     loading.value = false
   }
 }
 
-// FIX: 删除 handleSSOCallback
-// 原来的逻辑期望 jwt-auth 把 token 带回登录页再由前端 POST 验证，
-// 但实际上 jwt-auth 直接把浏览器重定向到后端 /api/auth/sso/callback，
-// 由后端 HTML 页面写 localStorage 并跳转，前端这里永远拿不到 token query 参数。
-// 两套流程混用导致 localStorage 始终为空。
-// 现在统一由后端 HTML 回调页负责写 localStorage + 跳转，前端无需处理。
+// 检查 URL 是否包含 SSO 回调参数
+const checkSSOCallback = async () => {
+  const params = new URLSearchParams(window.location.search)
+  const token = params.get('token')
+  
+  if (token) {
+    ssoLoading.value = true
+    try {
+      // 获取用户信息
+      const response = await fetch('/api/auth/sso/callback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          token,
+          redirect_uri: window.location.origin + '/'
+        })
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        userStore.setUser(data.user, data.access_token)
+        
+        // 清除 URL 参数
+        window.history.replaceState({}, document.title, '/')
+        
+        // 跳转到首页
+        router.push('/')
+        return
+      }
+    } catch (e) {
+      console.error('SSO 回调验证失败:', e)
+      error.value = '登录验证失败，请重试'
+    } finally {
+      ssoLoading.value = false
+    }
+  }
+}
 
 onMounted(async () => {
-  // FIX: 不再在登录页处理回调，回调由后端 /api/auth/sso/callback 的 HTML 页面处理
+  // 如果已登录，直接跳转首页
+  if (userStore.isAuthenticated) {
+    router.push('/')
+    return
+  }
+  
+  // 检查是否是 SSO 回调
+  await checkSSOCallback()
 })
 </script>
+
+<style scoped>
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+</style>

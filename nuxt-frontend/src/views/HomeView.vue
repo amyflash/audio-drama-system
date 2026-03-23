@@ -17,31 +17,27 @@
       {{ toast.message }}
     </div>
 
-    <!-- 加载中状态 -->
-<div v-if="!user" style="background-color: white; padding: 16px; text-align: center; color: #6b7280;">
-  加载中...
-</div>
-<!-- 移动端优化的用户头部 -->
+    <!-- 移动端优化的用户头部 -->
     <div style="background-color: white; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); border-bottom: 1px solid #e5e7eb; padding: 12px 16px; position: sticky; top: 0; z-index: 50;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <div style="display: flex; align-items: center; gap: 8px 12px;">
           <div style="width: 32px; height: 32px; background: linear-gradient(to bottom right, #10b981, #059669); border-radius: 9999px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px;">
-            {{ user?.username?.charAt(0).toUpperCase() || 'U' }}
+            {{ userStore.user?.username?.charAt(0).toUpperCase() || 'U' }}
           </div>
           <div style="min-width: 0;">
             <div style="display: flex; align-items: center; gap: 4px 8px;">
               <span style="font-weight: 600; color: #1f2937; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                {{ getUserDisplayName() }}
+                {{ userStore.userDisplayName }}
               </span>
               <span
-                v-if="isAdmin()"
+                v-if="userStore.isAdmin"
                 style="display: inline-block; padding: 2px 8px; font-size: 12px; font-weight: 500; border-radius: 9999px; background-color: #fee2e2; color: #991b1b;"
               >
                 管理员
               </span>
             </div>
             <div style="font-size: 12px; color: #6b7280;">
-              {{ user?.is_active ? '在线' : '离线' }} · ID: {{ user?.id }}
+              {{ userStore.user?.is_active ? '在线' : '离线' }} · ID: {{ userStore.user?.id }}
             </div>
           </div>
         </div>
@@ -68,7 +64,7 @@
         </div>
         <div style="display: flex; gap: 12px; flex-wrap: wrap;">
           <button
-            v-if="isAdmin() && albums.length > 0"
+            v-if="userStore.isAdmin && albums.length > 0"
             @click="showSearchBox = !showSearchBox"
             style="background-color: #10b981; color: white; font-weight: 500; padding: 10px 16px; border-radius: 8px; border: none; cursor: pointer; transition: background-color 0.2s; font-size: 14px;"
             onmouseover="this.style.backgroundColor='#059669'"
@@ -77,7 +73,7 @@
             🔍 搜索
           </button>
           <button
-            v-if="isAdmin()"
+            v-if="userStore.isAdmin"
             @click="showCreateModal = true"
             style="background-color: #10b981; color: white; font-weight: 500; padding: 10px 16px; border-radius: 8px; border: none; cursor: pointer; transition: background-color 0.2s; font-size: 14px;"
             onmouseover="this.style.backgroundColor='#059669'"
@@ -131,9 +127,8 @@
         <p style="color: #6b7280; font-size: 14px 16px; margin-bottom: 24px;">点击"新建专辑"按钮创建你的第一个专辑</p>
       </div>
 
-      <!-- 加载状态 - 骨架屏（无封面，仅信息块） -->
+      <!-- 加载状态 - 骨架屏 -->
       <div v-else-if="loading" class="album-grid">
-        <!-- 骨架屏卡片 x6 -->
         <div
           v-for="i in 6"
           :key="'skeleton-' + i"
@@ -174,36 +169,29 @@
         </div>
       </div>
 
-      <!-- 专辑列表 - 响应式网格（管理员左滑显示删除按钮） -->
+      <!-- 专辑列表 -->
       <div v-else class="album-grid">
         <div
           v-for="album in filteredAlbums"
           :key="album.id"
           style="display: flex; position: relative; overflow: hidden; border-radius: 12px;"
         >
-          <!-- 专辑卡片内容（无封面，仅信息块） -->
           <div
-            @click="navigateTo(`/albums/${album.id}`)"
+            @click="navigateToAlbum(album.id)"
             style="flex: 1; background-color: white; border-radius: 12px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); overflow: hidden; cursor: pointer; transition: box-shadow 0.2s; position: relative; z-index: 10;"
             onmouseover="this.style.boxShadow='0 4px 6px -1px rgba(0, 0, 0, 0.1)'"
             onmouseout="this.style.boxShadow='0 1px 3px 0 rgba(0, 0, 0, 0.1)'"
           >
-            <!-- 专辑信息 -->
             <div style="padding: 16px 20px;">
-              <h2 class="album-title">
-                {{ album.title }}
-              </h2>
-              <p class="album-desc">
-                {{ album.description || '暂无描述' }}
-              </p>
+              <h2 class="album-title">{{ album.title }}</h2>
+              <p class="album-desc">{{ album.description || '暂无描述' }}</p>
               <div style="display: flex; align-items: center; font-size: 12px; color: #9ca3af;">
                 <span>📅 {{ formatDate(album.created_at) }}</span>
               </div>
             </div>
           </div>
 
-          <!-- 按钮区域（右侧） -->
-          <div v-if="isAdmin()" style="flex-shrink: 0; width: 76px; display: flex; z-index: 20; position: absolute; right: 0; top: 0; bottom: 0;">
+          <div v-if="userStore.isAdmin" style="flex-shrink: 0; width: 76px; display: flex; z-index: 20; position: absolute; right: 0; top: 0; bottom: 0;">
             <div
               @click.stop="handleEdit(album)"
               style="flex: 1; background-color: #10b981; color: white; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; cursor: pointer; transition: background-color 0.2s;"
@@ -343,29 +331,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+import * as albumApi from '@/api/album'
 
-const { $albumApi } = useNuxtApp()
-
-// 从 localStorage 获取用户信息
-const user = computed(() => {
-  if (import.meta.client) {
-    const userData = localStorage.getItem('user')
-    return userData ? JSON.parse(userData) : null
-  }
-  return null
-})
-
-const getUserDisplayName = () => {
-  if (!user.value) return '加载中...'
-  return user.value?.first_name && user.value?.last_name
-    ? `${user.value.first_name} ${user.value.last_name}`
-    : user.value?.username || '加载中...'
-}
-
-const isAdmin = () => {
-  return user.value?.role === 'admin'
-}
+const router = useRouter()
+const userStore = useUserStore()
 
 const albums = ref<any[]>([])
 const filteredAlbums = ref<any[]>([])
@@ -381,14 +353,12 @@ const searchQuery = ref('')
 const searching = ref(false)
 const searched = ref(false)
 
-// 自定义 Toast 状态
 const toast = ref({
   show: false,
   message: '',
-  type: 'info' as 'success' | 'error' | 'warning'
+  type: 'success' as 'success' | 'error' | 'warning'
 })
 
-// 显示 Toast 提示
 const showToast = (message: string, type: 'success' | 'error' | 'warning' = 'info') => {
   toast.value = { show: true, message, type }
   setTimeout(() => {
@@ -399,13 +369,12 @@ const showToast = (message: string, type: 'success' | 'error' | 'warning' = 'inf
 const loadAlbums = async () => {
   loading.value = true
   try {
-    // 调试：检查 token 是否存在
-    const token = import.meta.client ? localStorage.getItem('token') : null
-    const user = import.meta.client ? localStorage.getItem('user') : null
+    const token = localStorage.getItem('token')
+    const user = localStorage.getItem('user')
     console.log('当前 token:', token ? '存在' : '不存在')
     console.log('当前 user:', user)
 
-    const response = await $albumApi.list()
+    const response = await albumApi.list()
     albums.value = response.data.items
     filteredAlbums.value = response.data.items
   } catch (error: any) {
@@ -413,15 +382,12 @@ const loadAlbums = async () => {
     const status = error?.response?.status
     const detail = error?.response?.data?.detail
     console.error('加载专辑失败:', error)
-    console.error('响应数据:', error?.response?.data)
-    console.error('Detail:', detail)
     if (status === 401) {
       showToast('登录已过期，请重新登录', 'error')
-      setTimeout(() => navigateTo('/login'), 1500)
+      setTimeout(() => router.push('/login'), 1500)
     } else if (status === 403) {
       showToast('无权访问，请联系管理员', 'error')
     } else if (detail) {
-      // 显示 422 验证错误的详细信息
       const messages = Array.isArray(detail) ? detail.map((d: any) => d.msg).join(', ') : String(detail)
       showToast('请求验证失败：' + messages, 'error')
     } else {
@@ -440,7 +406,7 @@ const handleCreate = async () => {
 
   creating.value = true
   try {
-    await $albumApi.create({
+    await albumApi.create({
       title: newAlbum.value.title,
       description: newAlbum.value.description
     })
@@ -468,7 +434,7 @@ const handleUpdate = async () => {
 
   updating.value = true
   try {
-    await $albumApi.update(editingAlbum.value.id, {
+    await albumApi.update(editingAlbum.value.id, {
       title: editingAlbum.value.title,
       description: editingAlbum.value.description || undefined,
       cover_image: editingAlbum.value.cover_image || '/default-cover.svg'
@@ -487,7 +453,7 @@ const handleUpdate = async () => {
 const handleDelete = async (album: any) => {
   if (confirm(`确定要删除专辑"${album.title}"吗？删除后无法恢复！`)) {
     try {
-      await $albumApi.delete(album.id)
+      await albumApi.remove(album.id)
       showToast('专辑删除成功', 'success')
       await loadAlbums()
     } catch (error) {
@@ -506,9 +472,8 @@ const handleSearch = async () => {
   searched.value = true
 
   try {
-    // 前端过滤（如果后端没有搜索接口）
     const query = searchQuery.value.toLowerCase()
-    filteredAlbums.value = albums.value.filter(album => 
+    filteredAlbums.value = albums.value.filter(album =>
       album.title?.toLowerCase().includes(query) ||
       album.description?.toLowerCase().includes(query)
     )
@@ -530,15 +495,18 @@ const clearSearch = () => {
 const handleLogout = async () => {
   if (confirm('确定要退出登录吗？')) {
     try {
-      if (import.meta.client) {
-        localStorage.removeItem('user')
-        localStorage.removeItem('token')
-      }
+      localStorage.removeItem('user')
+      localStorage.removeItem('token')
+      userStore.clearUser()
     } catch (error) {
       // Ignore logout error
     }
-    await navigateTo('/login')
+    router.push('/login')
   }
+}
+
+const navigateToAlbum = (id: number) => {
+  router.push(`/albums/${id}`)
 }
 
 const formatDate = (dateString: string) => {
@@ -551,12 +519,10 @@ const formatDate = (dateString: string) => {
 }
 
 onMounted(() => {
-  // 未登录用户直接跳转到登录页
-  if (!user.value) {
-    navigateTo('/login')
+  if (!userStore.isAuthenticated) {
+    router.push('/login')
     return
   }
-
   loadAlbums()
 })
 </script>
@@ -582,7 +548,6 @@ onMounted(() => {
   }
 }
 
-/* 页面标题区域：默认针对手机优化 */
 .page-header {
   display: flex;
   flex-direction: column;
@@ -602,7 +567,6 @@ onMounted(() => {
   font-size: 13px;
 }
 
-/* 专辑网格：默认单列，手机更易点击 */
 .album-grid {
   display: grid;
   grid-template-columns: repeat(1, minmax(0, 1fr));
@@ -629,7 +593,6 @@ onMounted(() => {
   overflow: hidden;
 }
 
-/* 大屏时再增强布局 */
 @media (min-width: 640px) {
   .page-header {
     flex-direction: row;
